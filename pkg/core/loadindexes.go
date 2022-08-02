@@ -16,8 +16,12 @@
 package core
 
 import (
+	"os"
+	"path"
+
 	"github.com/rs/zerolog/log"
 
+	"github.com/zinclabs/zinc/pkg/config"
 	"github.com/zinclabs/zinc/pkg/errors"
 	"github.com/zinclabs/zinc/pkg/meta"
 	"github.com/zinclabs/zinc/pkg/metadata"
@@ -63,11 +67,27 @@ func LoadZincIndexesFromMetadata(version string) error {
 				ShardNum: readIndex.Shards[id].ShardNum,
 				Stats:    readIndex.Shards[id].Stats,
 			}
+
 			index.ref.Shards[id].Shards = make([]*meta.IndexSecondShard, index.ref.Shards[id].ShardNum)
 			for j := range readIndex.Shards[id].Shards {
 				index.ref.Shards[id].Shards[j] = &meta.IndexSecondShard{
 					ID:    readIndex.Shards[id].Shards[j].ID,
 					Stats: readIndex.Shards[id].Shards[j].Stats,
+				}
+			}
+
+			// HACK shardNum
+			fs, err := os.ReadDir(path.Join(config.Global.DataPath, index.ref.Name, id))
+			if err == nil {
+				newShardNum := len(fs) - 2
+				if readIndex.Shards[id].ShardNum < int64(newShardNum) {
+					index.ref.Shards[id].ShardNum = int64(newShardNum)
+					index.ref.Shards[id].Shards = make([]*meta.IndexSecondShard, index.ref.Shards[id].ShardNum)
+					for j := int64(0); j < index.ref.Shards[id].ShardNum; j++ {
+						index.ref.Shards[id].Shards[j] = &meta.IndexSecondShard{
+							ID: j,
+						}
+					}
 				}
 			}
 		}
