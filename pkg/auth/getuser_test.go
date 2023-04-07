@@ -16,6 +16,7 @@
 package auth
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/ider"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -61,10 +62,11 @@ func TestGetUser(t *testing.T) {
 			wantErr: true,
 		},
 	}
+	node, _ := ider.NewNode(1)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.input != nil {
-				got, err := CreateUser(tt.input.ID, tt.input.Name, tt.input.Password, tt.input.Role)
+				got, err := CreateUser(tt.input.ID, tt.input.Name, tt.input.Password, tt.input.Role, node)
 				assert.NoError(t, err)
 				assert.NotNil(t, got)
 			}

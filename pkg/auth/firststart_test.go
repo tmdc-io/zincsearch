@@ -16,6 +16,7 @@
 package auth
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/ider"
 	"os"
 	"testing"
 
@@ -49,10 +50,11 @@ func TestInitFirstUser(t *testing.T) {
 			wantErr: true,
 		},
 	}
+	node, _ := ider.NewNode(1)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.args.init()
-			err := initFirstUser()
+			err := initFirstUser(node)
 			if tt.wantErr {
 				assert.Error(t, err)
 			} else {

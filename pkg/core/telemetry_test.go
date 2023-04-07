@@ -16,6 +16,8 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
+	"github.com/zinclabs/zincsearch/pkg/ider"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -23,8 +25,10 @@ import (
 
 func TestTelemetry(t *testing.T) {
 	indexName := "TestTelemetry.index_1"
+	cfg := config.NewGlobalConfig()
+	node, _ := ider.NewNode(1)
 	t.Run("prepare", func(t *testing.T) {
-		index, err := NewIndex(indexName, "disk", 1)
+		index, err := NewIndex(indexName, "disk", 1, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -32,19 +36,20 @@ func TestTelemetry(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	tel := NewTelemetry(true, node)
 	t.Run("telemetry", func(t *testing.T) {
-		id := Telemetry.createInstanceID()
+		id := tel.createInstanceID()
 		assert.NotEmpty(t, id)
-		Telemetry.Instance()
-		Telemetry.Event("server_start", nil)
-		Telemetry.Cron()
+		tel.Instance()
+		tel.Event("server_start", nil)
+		tel.Cron()
 
-		Telemetry.GetIndexSize(indexName)
-		Telemetry.HeartBeat()
+		tel.GetIndexSize(indexName)
+		tel.HeartBeat()
 	})
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := DeleteIndex(indexName)
+		err := DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

@@ -25,7 +25,9 @@ import (
 )
 
 // CreateDocument inserts or updates a document in the zinc index
-func (index *Index) CreateDocument(docID string, doc map[string]interface{}, update bool) error {
+func (index *Index) CreateDocument(
+	docID string, doc map[string]interface{}, update bool, enableTextKeywordMapping bool,
+) error {
 	// metrics
 	IncrMetricStatsByIndex(index.GetName(), "wal_request")
 
@@ -39,7 +41,7 @@ func (index *Index) CreateDocument(docID string, doc map[string]interface{}, upd
 	if update {
 		secondShardID = ShardIDNeedUpdate
 	}
-	data, err := shard.CheckDocument(docID, doc, update, secondShardID)
+	data, err := shard.CheckDocument(docID, doc, update, secondShardID, enableTextKeywordMapping)
 	if err != nil {
 		return err
 	}
@@ -48,18 +50,20 @@ func (index *Index) CreateDocument(docID string, doc map[string]interface{}, upd
 }
 
 // GetDocument get a document in the zinc index
-func (index *Index) GetDocument(docID string) (*meta.Hit, error) {
+func (index *Index) GetDocument(docID string, goroutineNum int) (*meta.Hit, error) {
 	// check WAL
 	shard := index.GetShardByDocID(docID)
 	if err := shard.OpenWAL(); err != nil {
 		return nil, err
 	}
 
-	return shard.FindDocumentByDocID(docID)
+	return shard.FindDocumentByDocID(docID, goroutineNum)
 }
 
 // UpdateDocument updates a document in the zinc index
-func (index *Index) UpdateDocument(docID string, doc map[string]interface{}, insert bool) error {
+func (index *Index) UpdateDocument(
+	docID string, doc map[string]interface{}, insert bool, goroutineNum int, enableTextKeywordMapping bool,
+) error {
 	// metrics
 	IncrMetricStatsByIndex(index.GetName(), "wal_request")
 
@@ -70,7 +74,7 @@ func (index *Index) UpdateDocument(docID string, doc map[string]interface{}, ins
 	}
 
 	update := true
-	secondShardID, err := shard.FindShardByDocID(docID)
+	secondShardID, err := shard.FindShardByDocID(docID, goroutineNum)
 	if err != nil {
 		if insert && err == errors.ErrorIDNotFound {
 			update = false
@@ -79,7 +83,7 @@ func (index *Index) UpdateDocument(docID string, doc map[string]interface{}, ins
 		}
 	}
 
-	data, err := shard.CheckDocument(docID, doc, update, secondShardID)
+	data, err := shard.CheckDocument(docID, doc, update, secondShardID, enableTextKeywordMapping)
 	if err != nil {
 		return err
 	}
@@ -88,7 +92,7 @@ func (index *Index) UpdateDocument(docID string, doc map[string]interface{}, ins
 }
 
 // DeleteDocument deletes a document in the zinc index
-func (index *Index) DeleteDocument(docID string) error {
+func (index *Index) DeleteDocument(docID string, goroutineNum int) error {
 	// metrics
 	IncrMetricStatsByIndex(index.GetName(), "wal_request")
 
@@ -98,7 +102,7 @@ func (index *Index) DeleteDocument(docID string) error {
 		return err
 	}
 
-	secondShardID, err := shard.FindShardByDocID(docID)
+	secondShardID, err := shard.FindShardByDocID(docID, goroutineNum)
 	if err != nil {
 		return err
 	}

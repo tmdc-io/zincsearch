@@ -24,7 +24,6 @@ import (
 	"github.com/zinclabs/zincsearch/pkg/bluge/analysis/lang/chs/analyzer"
 	"github.com/zinclabs/zincsearch/pkg/bluge/analysis/lang/chs/token"
 	"github.com/zinclabs/zincsearch/pkg/bluge/analysis/lang/chs/tokenizer"
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/zutils"
 )
 
@@ -49,15 +48,15 @@ func NewGseStopTokenFilter() analysis.TokenFilter {
 
 var seg *gse.Segmenter
 
-func init() {
+func NewSegmenter(cfgEnable bool, cfgEmbed, cfgDictPath string) {
 	seg = new(gse.Segmenter)
-	enable := config.Global.Plugin.GSE.Enable   // true / false
-	embed := config.Global.Plugin.GSE.DictEmbed // small / big
+	enable := cfgEnable // true / false
+	embed := cfgEmbed   // small / big
 	embed = strings.ToUpper(embed)
-	loadDict(enable, embed)
+	loadDict(enable, embed, cfgDictPath)
 }
 
-func loadDict(enable bool, embed string) {
+func loadDict(enable bool, embed, dictPath string) {
 	if enable {
 		if embed == "BIG" {
 			_ = seg.LoadDictEmbed("zh_s")
@@ -74,7 +73,7 @@ func loadDict(enable bool, embed string) {
 	seg.SkipLog = true
 
 	// load user dict
-	dataPath := config.Global.Plugin.GSE.DictPath
+	dataPath := dictPath
 	userDict := dataPath + "/user.txt"
 	if ok, _ := zutils.IsExist(userDict); ok {
 		_ = seg.LoadDict(userDict)

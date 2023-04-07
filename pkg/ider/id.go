@@ -17,31 +17,52 @@ package ider
 
 import (
 	"github.com/bwmarrin/snowflake"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/zutils/base62"
 )
 
-type Node struct {
-	node *snowflake.Node
+const (
+	NodeContextKey string = "zincsearch-node"
+)
+
+func GetNode(c *gin.Context) *Node {
+	n := c.MustGet(NodeContextKey).(*Node)
+	return n
+}
+
+func InjectNode(n *Node) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(NodeContextKey, n)
+		c.Next()
+	}
 }
 
 var local *Node
 
 func init() {
 	var err error
-	local, err = NewNode(config.Global.NodeID)
+	local, err = NewNode(1)
 	if err != nil {
 		log.Fatal().Msgf("id generater init[local] err %s", err.Error())
 	}
 }
 
-func Generate() string {
-	return local.Generate()
+type Node struct {
+	node *snowflake.Node
+}
+
+func LocalNode() *Node {
+	if local == nil {
+		local, _ = NewNode(1)
+	}
+	return local
 }
 
 func NewNode(id int) (*Node, error) {
+	if local != nil {
+		return local, nil
+	}
 	node, err := snowflake.NewNode(int64(id % 1024))
 	return &Node{node: node}, err
 }

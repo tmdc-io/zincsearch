@@ -53,7 +53,8 @@ func Multi(c *gin.Context) {
 	}
 
 	defer c.Request.Body.Close()
-	count, err := MultiWorker(target, c.Request.Body)
+	cfg := config.GetConfig(c)
+	count, err := MultiWorker(target, c.Request.Body, cfg.MaxDocumentSize, cfg.EnableTextKeywordMapping, ider.GetNode(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, meta.HTTPResponseError{Error: err.Error()})
 		return
@@ -62,13 +63,15 @@ func Multi(c *gin.Context) {
 	c.JSON(http.StatusOK, meta.HTTPResponseRecordCount{Message: "multiple data inserted", RecordCount: count})
 }
 
-func MultiWorker(indexName string, body io.Reader) (int64, error) {
+func MultiWorker(
+	indexName string, body io.Reader, maxDocumentSize int, enableTextKeywordMapping bool, node *ider.Node,
+) (int64, error) {
 	// Prepare to read the entire raw text of the body
 	scanner := bufio.NewScanner(body)
 
 	// Set 1 MB max per line. docs at - https://pkg.go.dev/bufio#pkg-constants
 	// This is the max size of a line in a file that we will process
-	maxCapacityPerLine := config.Global.MaxDocumentSize
+	maxCapacityPerLine := maxDocumentSize
 	buf := make([]byte, maxCapacityPerLine)
 	scanner.Buffer(buf, maxCapacityPerLine)
 
@@ -96,12 +99,12 @@ func MultiWorker(indexName string, body io.Reader) (int64, error) {
 			docID = val.(string)
 		}
 		if docID == "" {
-			docID = ider.Generate()
+			docID = node.Generate()
 		} else {
 			update = true
 		}
 
-		err = newIndex.CreateDocument(docID, doc, update)
+		err = newIndex.CreateDocument(docID, doc, update, enableTextKeywordMapping)
 		if err != nil {
 			return count, err
 		}

@@ -17,6 +17,8 @@ package utils
 
 import (
 	"bytes"
+	"github.com/zinclabs/zincsearch/pkg/config"
+	"github.com/zinclabs/zincsearch/pkg/ider"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -30,6 +32,13 @@ func NewGinContext() (*gin.Context, *httptest.ResponseRecorder) {
 	gin.SetMode(gin.ReleaseMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
+
+	//adding the global config to the gin context
+	cfg := config.NewGlobalConfig()
+	c.Set(config.GlobalConfigContextKey, cfg)
+	node, _ := ider.NewNode(cfg.NodeID)
+	c.Set(ider.NodeContextKey, node)
+
 	req := &http.Request{
 		URL:    &url.URL{},
 		Header: make(http.Header),

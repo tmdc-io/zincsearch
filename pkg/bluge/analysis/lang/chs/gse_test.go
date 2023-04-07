@@ -22,8 +22,6 @@ import (
 
 	"github.com/blugelabs/bluge/analysis"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/zinclabs/zincsearch/pkg/config"
 )
 
 func TestLoadDict(t *testing.T) {
@@ -60,7 +58,6 @@ func TestLoadDict(t *testing.T) {
 
 	t.Run("prepare dict", func(t *testing.T) {
 		_ = os.Mkdir("data", 0755)
-		config.Global.Plugin.GSE.DictPath = "./data"
 		err := writeFile("./data/user.txt", "你若安好便是晴天 100 n\n")
 		assert.NoError(t, err)
 		err = writeFile("./data/stop.txt", "你好\n")
@@ -69,7 +66,7 @@ func TestLoadDict(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			loadDict(tt.args.enable, tt.args.embed)
+			loadDict(tt.args.enable, tt.args.embed, "./data")
 		})
 	}
 

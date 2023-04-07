@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,6 +27,7 @@ func TestDeleteIndex(t *testing.T) {
 	type args struct {
 		name string
 	}
+	cfg := config.NewGlobalConfig()
 	tests := []struct {
 		name    string
 		args    args
@@ -48,7 +50,7 @@ func TestDeleteIndex(t *testing.T) {
 	}
 
 	t.Run("prepare", func(t *testing.T) {
-		index, err := NewIndex(indexName, "disk", 2)
+		index, err := NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 		err = StoreIndex(index)
@@ -57,7 +59,7 @@ func TestDeleteIndex(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := DeleteIndex(tt.args.name); (err != nil) != tt.wantErr {
+			if err := DeleteIndex(tt.args.name, cfg.DataPath); (err != nil) != tt.wantErr {
 				t.Errorf("DeleteIndex() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

@@ -16,6 +16,7 @@
 package index
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"testing"
 
@@ -56,9 +57,9 @@ func TestRefresh(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
+	cfg := config.NewGlobalConfig()
 	t.Run("prepare", func(t *testing.T) {
-		index, err := core.NewIndex("TestRefresh.index_1", "disk", 2)
+		index, err := core.NewIndex("TestRefresh.index_1", "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 

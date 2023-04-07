@@ -16,6 +16,7 @@
 package index
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"testing"
 
@@ -101,6 +102,7 @@ func TestCreate(t *testing.T) {
 			wantErr: false,
 		},
 	}
+	cfg := config.NewGlobalConfig()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c, w := utils.NewGinContext()
@@ -124,7 +126,7 @@ func TestCreate(t *testing.T) {
 			}
 
 			if !tt.wantErr {
-				err = core.DeleteIndex(resp["index"])
+				err = core.DeleteIndex(resp["index"], cfg.DataPath)
 				assert.NoError(t, err)
 			}
 		})
@@ -204,6 +206,7 @@ func TestCreateES(t *testing.T) {
 			wantErr: false,
 		},
 	}
+	cfg := config.NewGlobalConfig()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c, w := utils.NewGinContext()
@@ -218,7 +221,7 @@ func TestCreateES(t *testing.T) {
 			assert.NoError(t, err)
 
 			if !tt.wantErr {
-				err = core.DeleteIndex(resp["index"].(string))
+				err = core.DeleteIndex(resp["index"].(string), cfg.DataPath)
 				assert.NoError(t, err)
 			}
 		})

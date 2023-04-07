@@ -16,6 +16,7 @@
 package search
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"testing"
 
@@ -33,6 +34,7 @@ func TestSearchV1(t *testing.T) {
 		params map[string]string
 		result string
 	}
+	cfg := config.NewGlobalConfig()
 	tests := []struct {
 		name string
 		args args
@@ -67,7 +69,7 @@ func TestSearchV1(t *testing.T) {
 	}
 
 	t.Run("prepare", func(t *testing.T) {
-		index, err := core.NewIndex(indexName, "disk", 2)
+		index, err := core.NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 		err = core.StoreIndex(index)
@@ -86,7 +88,7 @@ func TestSearchV1(t *testing.T) {
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := core.DeleteIndex(indexName)
+		err := core.DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

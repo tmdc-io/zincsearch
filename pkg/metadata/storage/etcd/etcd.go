@@ -34,12 +34,12 @@ type etcdStorage struct {
 	cli    *client.Client
 }
 
-func New(dbpath string) storage.Storager {
+func New(dbpath string, cfg config.Etcd) storage.Storager {
 	cli, err := client.New(client.Config{
-		Endpoints:   config.Global.Etcd.Endpoints,
+		Endpoints:   cfg.Endpoints,
 		DialTimeout: 5 * time.Second,
-		Username:    config.Global.Etcd.Username,
-		Password:    config.Global.Etcd.Password,
+		Username:    cfg.Username,
+		Password:    cfg.Password,
 	})
 	if err != nil {
 		log.Fatal().Err(err).Msg("open etcd for metadata failed")

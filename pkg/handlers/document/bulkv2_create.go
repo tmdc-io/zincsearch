@@ -16,6 +16,7 @@
 package document
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -55,7 +56,8 @@ func Bulkv2(c *gin.Context) {
 	}
 
 	defer c.Request.Body.Close()
-	count, err := Bulkv2Worker(target, body)
+	cfg := config.GetConfig(c)
+	count, err := Bulkv2Worker(target, body, cfg.EnableTextKeywordMapping, ider.GetNode(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, meta.HTTPResponseError{Error: err.Error()})
 		return
@@ -65,7 +67,7 @@ func Bulkv2(c *gin.Context) {
 }
 
 // Bulkv2Worker accept JSONIngest json documents. It provides a simpler format to ingest data.
-func Bulkv2Worker(indexName string, body meta.JSONIngest) (int64, error) {
+func Bulkv2Worker(indexName string, body meta.JSONIngest, enableTextKeywordMapping bool, node *ider.Node) (int64, error) {
 	var err error
 	var count int64
 	newIndex, _, err := core.GetOrCreateIndex(indexName, "", 0)
@@ -81,12 +83,12 @@ func Bulkv2Worker(indexName string, body meta.JSONIngest) (int64, error) {
 			docID = val.(string)
 		}
 		if docID == "" {
-			docID = ider.Generate()
+			docID = node.Generate()
 		} else {
 			update = true
 		}
 
-		err = newIndex.CreateDocument(docID, doc, update)
+		err = newIndex.CreateDocument(docID, doc, update, enableTextKeywordMapping)
 		if err != nil {
 			return count, err
 		}

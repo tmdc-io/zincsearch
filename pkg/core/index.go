@@ -249,10 +249,10 @@ func (index *Index) GetWALSize() uint64 {
 }
 
 // GetReaders return all shard readers
-func (index *Index) GetReaders(timeMin, timeMax int64) ([]*bluge.Reader, error) {
+func (index *Index) GetReaders(timeMin, timeMax int64, goroutineNum int) ([]*bluge.Reader, error) {
 	readers := make([]*bluge.Reader, 0)
 	for _, shard := range index.shards {
-		rs, err := shard.GetReaders(timeMin, timeMax)
+		rs, err := shard.GetReaders(timeMin, timeMax, goroutineNum)
 		if err != nil {
 			return nil, err
 		}

@@ -20,7 +20,6 @@ import (
 	"path"
 	"sort"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/ider"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/zutils"
@@ -37,16 +36,16 @@ import (
 // -- mv     index_old/000001 index/shard1/000001
 // -- mv     index_old/000002 index/shard1/000002
 // -- mv     index_old/000003 index/shard1/000003
-func UpgradeFromV026T027(index *meta.Index) error {
+func UpgradeFromV026T027(index *meta.Index, dataPath string, shardNum int64) error {
 	indexName := index.Name
-	rootPath := config.Global.DataPath
+	rootPath := dataPath
 	if ok, _ := zutils.IsExist(path.Join(rootPath, indexName)); !ok {
 		return nil // if index does not exist, skip
 	}
 
 	// update metadata
 	if len(index.Shards) == 0 {
-		newIndex, err := UpgradeMetadataFromV026T027(nil)
+		newIndex, err := UpgradeMetadataFromV026T027(nil, shardNum)
 		if err != nil {
 			return err
 		}
@@ -107,7 +106,7 @@ func UpgradeFromV026T027(index *meta.Index) error {
 	return os.Remove(path.Join(rootPath, indexName+"_old"))
 }
 
-func UpgradeMetadataFromV026T027(data []byte) (*meta.Index, error) {
+func UpgradeMetadataFromV026T027(data []byte, shardNum int64) (*meta.Index, error) {
 	idx026 := new(meta.IndexV026)
 	if data == nil {
 		data = []byte(`{"shard_num":1,"shards":[{"id":0,"doc_num":0}]}`)
@@ -117,9 +116,9 @@ func UpgradeMetadataFromV026T027(data []byte) (*meta.Index, error) {
 		return nil, err
 	}
 
-	shardNames := make([]string, config.Global.Shard.Num)
-	shards := make(map[string]*meta.IndexShard, config.Global.Shard.Num)
-	for i := int64(0); i < config.Global.Shard.Num; i++ {
+	shardNames := make([]string, shardNum)
+	shards := make(map[string]*meta.IndexShard, shardNum)
+	for i := int64(0); i < shardNum; i++ {
 		node, err := ider.NewNode(int(i))
 		if err != nil {
 			return nil, err
@@ -166,7 +165,7 @@ func UpgradeMetadataFromV026T027(data []byte) (*meta.Index, error) {
 		return nil, err
 	}
 	idx.Shards = shards
-	idx.ShardNum = config.Global.Shard.Num
+	idx.ShardNum = shardNum
 	idx.Stats.DocNum = shards[firstShardName].Stats.DocNum
 	idx.Stats.StorageSize = shards[firstShardName].Stats.StorageSize
 	return idx, nil

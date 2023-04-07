@@ -47,7 +47,7 @@ func CheckIndexName(name string) error {
 }
 
 // NewIndex creates an instance of a physical zinc index that can be used to store and retrieve data.
-func NewIndex(name, storageType string, shardNum int64) (*Index, error) {
+func NewIndex(name, storageType string, shardNum int64, cfg *config.Config) (*Index, error) {
 	if err := CheckIndexName(name); err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func NewIndex(name, storageType string, shardNum int64) (*Index, error) {
 	}
 
 	if shardNum <= 0 {
-		shardNum = config.Global.Shard.Num
+		shardNum = cfg.Shard.Num
 	}
 
 	index := new(Index)
@@ -96,9 +96,13 @@ func NewIndex(name, storageType string, shardNum int64) (*Index, error) {
 	index.shards = make(map[string]*IndexShard, index.shardNum)
 	for id := range index.ref.Shards {
 		index.shards[id] = &IndexShard{
-			root: index,
-			ref:  index.ref.Shards[id],
-			name: index.ref.Name + "/" + index.ref.Shards[id].ID,
+			root:             index,
+			ref:              index.ref.Shards[id],
+			name:             index.ref.Name + "/" + index.ref.Shards[id].ID,
+			dataPath:         cfg.DataPath,
+			walRedoLogNoSync: cfg.WalRedoLogNoSync,
+			batchSize:        cfg.BatchSize,
+			maxSize:          cfg.Shard.MaxSize,
 		}
 		index.shards[id].shards = make([]*IndexSecondShard, index.ref.Shards[id].ShardNum)
 		for j := range index.ref.Shards[id].Shards {
@@ -119,13 +123,12 @@ func NewIndex(name, storageType string, shardNum int64) (*Index, error) {
 }
 
 // LoadIndexWriter load the index writer from the storage
-func OpenIndexWriter(name string, storageType string, defaultSearchAnalyzer *analysis.Analyzer, timeRange ...int64) (*bluge.Writer, error) {
-	cfg := getOpenConfig(name, storageType, defaultSearchAnalyzer, timeRange...)
+func OpenIndexWriter(name string, storageType string, defaultSearchAnalyzer *analysis.Analyzer, dataPath string, timeRange ...int64) (*bluge.Writer, error) {
+	cfg := getOpenConfig(name, storageType, defaultSearchAnalyzer, dataPath, timeRange...)
 	return bluge.OpenWriter(cfg)
 }
 
-func getOpenConfig(name string, storageType string, defaultSearchAnalyzer *analysis.Analyzer, timeRange ...int64) bluge.Config {
-	dataPath := config.Global.DataPath
+func getOpenConfig(name string, storageType string, defaultSearchAnalyzer *analysis.Analyzer, dataPath string, timeRange ...int64) bluge.Config {
 	cfg := directory.GetDiskConfig(dataPath, name, timeRange...)
 	if defaultSearchAnalyzer != nil {
 		cfg.DefaultSearchAnalyzer = defaultSearchAnalyzer

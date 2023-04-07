@@ -3,6 +3,7 @@ data1
 data-v*
 miniodata
 .minio.sys
+bin
 # Binaries for programs and plugins
 *.exe
 *.exe~

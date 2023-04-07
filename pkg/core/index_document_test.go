@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"testing"
 	"time"
 
@@ -29,6 +30,7 @@ func TestIndex_CreateUpdateDocument(t *testing.T) {
 	type fields struct {
 		Name string
 	}
+	cfg := config.NewGlobalConfig()
 	type args struct {
 		docID  string
 		doc    map[string]interface{}
@@ -95,7 +97,7 @@ func TestIndex_CreateUpdateDocument(t *testing.T) {
 	var index *Index
 	var err error
 	t.Run("prepare", func(t *testing.T) {
-		index, err = NewIndex(indexName, "disk", 2)
+		index, err = NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 		err = StoreIndex(index)
@@ -104,7 +106,7 @@ func TestIndex_CreateUpdateDocument(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := index.CreateDocument(tt.args.docID, tt.args.doc, tt.args.update)
+			err := index.CreateDocument(tt.args.docID, tt.args.doc, tt.args.update, cfg.EnableTextKeywordMapping)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -123,14 +125,14 @@ func TestIndex_CreateUpdateDocument(t *testing.T) {
 					},
 				},
 			}
-			res, err := index.Search(query)
+			res, err := index.Search(query, cfg)
 			assert.NoError(t, err)
 			assert.GreaterOrEqual(t, res.Hits.Total.Value, 1)
 		})
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err = DeleteIndex(indexName)
+		err = DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }
@@ -141,6 +143,7 @@ func TestIndex_UpdateDocument(t *testing.T) {
 		doc    map[string]interface{}
 		insert bool
 	}
+	cfg := config.NewGlobalConfig()
 	tests := []struct {
 		name    string
 		args    args
@@ -175,7 +178,7 @@ func TestIndex_UpdateDocument(t *testing.T) {
 	var index *Index
 	var err error
 	t.Run("prepare", func(t *testing.T) {
-		index, err = NewIndex("TestIndex_UpdateDocument.index_1", "disk", 2)
+		index, err = NewIndex("TestIndex_UpdateDocument.index_1", "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 		err = StoreIndex(index)
@@ -189,7 +192,7 @@ func TestIndex_UpdateDocument(t *testing.T) {
 		err = index.CreateDocument("1", map[string]interface{}{
 			"name": "Hello",
 			"time": float64(1579098983),
-		}, false)
+		}, false, cfg.EnableTextKeywordMapping)
 		assert.NoError(t, err)
 
 		// wait for WAL write to index
@@ -198,14 +201,14 @@ func TestIndex_UpdateDocument(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := index.UpdateDocument(tt.args.docID, tt.args.doc, tt.args.insert); (err != nil) != tt.wantErr {
+			if err := index.UpdateDocument(tt.args.docID, tt.args.doc, tt.args.insert, cfg.Shard.GoroutineNum, cfg.EnableTextKeywordMapping); (err != nil) != tt.wantErr {
 				t.Errorf("Index.UpdateDocument() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err = DeleteIndex("TestIndex_UpdateDocument.index_1")
+		err = DeleteIndex("TestIndex_UpdateDocument.index_1", cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }
@@ -214,6 +217,7 @@ func TestIndex_GetDocument(t *testing.T) {
 	type args struct {
 		docID string
 	}
+	cfg := config.NewGlobalConfig()
 	tests := []struct {
 		name    string
 		args    args
@@ -237,7 +241,7 @@ func TestIndex_GetDocument(t *testing.T) {
 	var index *Index
 	var err error
 	t.Run("prepare", func(t *testing.T) {
-		index, err = NewIndex(indexName, "disk", 2)
+		index, err = NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 		err = StoreIndex(index)
@@ -246,7 +250,7 @@ func TestIndex_GetDocument(t *testing.T) {
 		err = index.CreateDocument("1", map[string]interface{}{
 			"name": "Hello",
 			"time": float64(1579098983),
-		}, false)
+		}, false, cfg.EnableTextKeywordMapping)
 		assert.NoError(t, err)
 
 		// wait for WAL write to index
@@ -255,7 +259,7 @@ func TestIndex_GetDocument(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := index.GetDocument(tt.args.docID)
+			_, err := index.GetDocument(tt.args.docID, cfg.Shard.GoroutineNum)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -265,7 +269,7 @@ func TestIndex_GetDocument(t *testing.T) {
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err = DeleteIndex(indexName)
+		err = DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }
@@ -274,6 +278,7 @@ func TestIndex_DeleteDocument(t *testing.T) {
 	type args struct {
 		docID string
 	}
+	cfg := config.NewGlobalConfig()
 	tests := []struct {
 		name    string
 		args    args
@@ -297,7 +302,7 @@ func TestIndex_DeleteDocument(t *testing.T) {
 	var index *Index
 	var err error
 	t.Run("prepare", func(t *testing.T) {
-		index, err = NewIndex(indexName, "disk", 2)
+		index, err = NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 		err = StoreIndex(index)
@@ -306,7 +311,7 @@ func TestIndex_DeleteDocument(t *testing.T) {
 		err = index.CreateDocument("1", map[string]interface{}{
 			"name": "Hello",
 			"time": float64(1579098983),
-		}, false)
+		}, false, cfg.EnableTextKeywordMapping)
 		assert.NoError(t, err)
 
 		// wait for WAL write to index
@@ -315,7 +320,7 @@ func TestIndex_DeleteDocument(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := index.DeleteDocument(tt.args.docID)
+			err := index.DeleteDocument(tt.args.docID, cfg.Shard.GoroutineNum)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -325,7 +330,7 @@ func TestIndex_DeleteDocument(t *testing.T) {
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err = DeleteIndex(indexName)
+		err = DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }
@@ -368,6 +373,7 @@ func TestIndex_CreateUpdateDocumentWithDateField(t *testing.T) {
 		EpochMax int
 		EpochMin int
 	}
+	cfg := config.NewGlobalConfig()
 	type args struct {
 		docID  string
 		doc    map[string]interface{}
@@ -474,7 +480,7 @@ func TestIndex_CreateUpdateDocumentWithDateField(t *testing.T) {
 	var index *Index
 	var err error
 	t.Run("prepare", func(t *testing.T) {
-		index, err = NewIndex(indexName, "disk", 2)
+		index, err = NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 		err = StoreIndex(index)
@@ -483,7 +489,7 @@ func TestIndex_CreateUpdateDocumentWithDateField(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := index.CreateDocument(tt.args.docID, tt.args.doc, tt.args.update)
+			err := index.CreateDocument(tt.args.docID, tt.args.doc, tt.args.update, cfg.EnableTextKeywordMapping)
 			assert.NoError(t, err)
 
 			// wait for WAL write to index
@@ -532,7 +538,7 @@ func TestIndex_CreateUpdateDocumentWithDateField(t *testing.T) {
 				}
 			}
 
-			res, err := index.Search(query)
+			res, err := index.Search(query, cfg)
 			if tt.wantQueryErr {
 				assert.Error(t, err)
 				return
@@ -553,7 +559,7 @@ func TestIndex_CreateUpdateDocumentWithDateField(t *testing.T) {
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err = DeleteIndex(indexName)
+		err = DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

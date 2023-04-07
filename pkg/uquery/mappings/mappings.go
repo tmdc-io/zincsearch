@@ -21,7 +21,6 @@ import (
 
 	"github.com/blugelabs/bluge/analysis"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/errors"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	zincanalysis "github.com/zinclabs/zincsearch/pkg/uquery/analysis"
@@ -29,7 +28,7 @@ import (
 	"github.com/zinclabs/zincsearch/pkg/zutils/json"
 )
 
-func Request(analyzers map[string]*analysis.Analyzer, data map[string]interface{}) (*meta.Mappings, error) {
+func Request(analyzers map[string]*analysis.Analyzer, data map[string]interface{}, enableTextKeywordMapping bool) (*meta.Mappings, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
@@ -57,7 +56,7 @@ func Request(analyzers map[string]*analysis.Analyzer, data map[string]interface{
 				return nil, errors.New(errors.ErrorTypeParsingException, fmt.Sprintf("[mappings] properties [%s] should be an object", field))
 			}
 
-			if subMappings, err := Request(analyzers, prop); err == nil {
+			if subMappings, err := Request(analyzers, prop, enableTextKeywordMapping); err == nil {
 				for k, v := range subMappings.ListProperty() {
 					mappings.SetProperty(field+"."+k, v)
 				}
@@ -91,7 +90,7 @@ func Request(analyzers map[string]*analysis.Analyzer, data map[string]interface{
 		case "text":
 			newProp = meta.NewProperty(propTypeStr)
 
-			if config.Global.EnableTextKeywordMapping {
+			if enableTextKeywordMapping {
 				p := meta.NewProperty("keyword")
 				newProp.AddField("keyword", p)
 			}

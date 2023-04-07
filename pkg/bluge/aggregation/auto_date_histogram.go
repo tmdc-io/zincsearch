@@ -24,7 +24,6 @@ import (
 	"github.com/blugelabs/bluge/search/aggregations"
 	"github.com/rs/zerolog/log"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/zutils"
 )
 
@@ -37,9 +36,10 @@ type AutoDateHistogramAggregation struct {
 
 	aggregations map[string]search.Aggregation
 
-	lessFunc func(a, b *search.Bucket) bool
-	desc     bool
-	sortFunc func(p sort.Interface)
+	lessFunc             func(a, b *search.Bucket) bool
+	desc                 bool
+	sortFunc             func(p sort.Interface)
+	aggregationTermsSize int
 }
 
 // NewAutoDateHistogramAggregation returns a termsAggregation
@@ -48,6 +48,7 @@ func NewAutoDateHistogramAggregation(
 	field search.FieldSource,
 	buckets int, minimumInterval,
 	format string, timeZone *time.Location,
+	aggregationTermsSize int,
 ) *AutoDateHistogramAggregation {
 	rv := &AutoDateHistogramAggregation{
 		src:             field,
@@ -59,8 +60,9 @@ func NewAutoDateHistogramAggregation(
 		lessFunc: func(a, b *search.Bucket) bool {
 			return a.Name() < b.Name()
 		},
-		aggregations: make(map[string]search.Aggregation),
-		sortFunc:     sort.Sort,
+		aggregations:         make(map[string]search.Aggregation),
+		sortFunc:             sort.Sort,
+		aggregationTermsSize: aggregationTermsSize,
 	}
 	rv.aggregations["count"] = aggregations.CountMatches()
 	return rv
@@ -76,18 +78,19 @@ func (t *AutoDateHistogramAggregation) Fields() []string {
 
 func (t *AutoDateHistogramAggregation) Calculator() search.Calculator {
 	return &AutoDateHistogramCalculator{
-		src:          t.src,
-		size:         t.size,
-		format:       t.format,
-		timeZone:     t.timeZone,
-		intervals:    t.getIntervals(),
-		minValue:     math.MaxInt64,
-		maxValue:     math.MinInt64,
-		aggregations: t.aggregations,
-		desc:         t.desc,
-		lessFunc:     t.lessFunc,
-		sortFunc:     t.sortFunc,
-		bucketsMap:   make(map[int64]*search.Bucket),
+		src:                  t.src,
+		size:                 t.size,
+		format:               t.format,
+		timeZone:             t.timeZone,
+		intervals:            t.getIntervals(),
+		minValue:             math.MaxInt64,
+		maxValue:             math.MinInt64,
+		aggregations:         t.aggregations,
+		desc:                 t.desc,
+		lessFunc:             t.lessFunc,
+		sortFunc:             t.sortFunc,
+		bucketsMap:           make(map[int64]*search.Bucket),
+		aggregationTermsSize: t.aggregationTermsSize,
 	}
 }
 
@@ -139,9 +142,10 @@ type AutoDateHistogramCalculator struct {
 	total       int
 	other       int
 
-	desc     bool
-	lessFunc func(a, b *search.Bucket) bool
-	sortFunc func(p sort.Interface)
+	desc                 bool
+	lessFunc             func(a, b *search.Bucket) bool
+	sortFunc             func(p sort.Interface)
+	aggregationTermsSize int
 }
 
 func (a *AutoDateHistogramCalculator) Consume(d *search.DocumentMatch) {
@@ -225,7 +229,7 @@ func (a *AutoDateHistogramCalculator) afterMerge() {
 
 func (a *AutoDateHistogramCalculator) Finish() {
 	// Calc AggregationTermsSize
-	for a.minValue+int64(a.intervals[a.currentInterval])*int64(config.Global.AggregationTermsSize) < a.maxValue {
+	for a.minValue+int64(a.intervals[a.currentInterval])*int64(a.aggregationTermsSize) < a.maxValue {
 		a.currentInterval++
 	}
 

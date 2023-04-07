@@ -16,6 +16,7 @@
 package search
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"testing"
 
@@ -33,6 +34,7 @@ func TestSearchDSL(t *testing.T) {
 		params map[string]string
 		result string
 	}
+	cfg := config.NewGlobalConfig()
 	tests := []struct {
 		name string
 		args args
@@ -75,7 +77,7 @@ func TestSearchDSL(t *testing.T) {
 	}
 
 	t.Run("prepare", func(t *testing.T) {
-		index, err := core.NewIndex(indexName, "disk", 2)
+		index, err := core.NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 		err = core.StoreIndex(index)
@@ -94,7 +96,7 @@ func TestSearchDSL(t *testing.T) {
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := core.DeleteIndex(indexName)
+		err := core.DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }
@@ -107,6 +109,7 @@ func TestMultipleSearch(t *testing.T) {
 		params map[string]string
 		result string
 	}
+	cfg := config.NewGlobalConfig()
 	tests := []struct {
 		name string
 		args args
@@ -142,7 +145,7 @@ func TestMultipleSearch(t *testing.T) {
 	}
 
 	t.Run("prepare", func(t *testing.T) {
-		index, err := core.NewIndex(indexName, "disk", 2)
+		index, err := core.NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 		err = core.StoreIndex(index)
@@ -161,7 +164,7 @@ func TestMultipleSearch(t *testing.T) {
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := core.DeleteIndex(indexName)
+		err := core.DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

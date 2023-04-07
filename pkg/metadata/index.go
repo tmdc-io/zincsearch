@@ -16,6 +16,7 @@
 package metadata
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/upgrade"
 	"github.com/zinclabs/zincsearch/pkg/zutils/json"
@@ -25,7 +26,7 @@ type index struct{}
 
 var Index = new(index)
 
-func (t *index) List(offset, limit int) ([]*meta.Index, error) {
+func (t *index) List(offset, limit int, cfg *config.Config) ([]*meta.Index, error) {
 	data, err := db.List(t.key(""), offset, limit)
 	if err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func (t *index) List(offset, limit int) ([]*meta.Index, error) {
 		if err != nil {
 			if err.Error() == "expected { character for map value" {
 				// compatible for v026 --> begin
-				idx, err = upgrade.UpgradeMetadataFromV026T027(d)
+				idx, err = upgrade.UpgradeMetadataFromV026T027(d, cfg.Shard.Num)
 				if err != nil {
 					return nil, err
 				}

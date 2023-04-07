@@ -22,7 +22,6 @@ import (
 	"github.com/blugelabs/bluge/analysis"
 	"github.com/blugelabs/bluge/search"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/errors"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/uquery/aggregation"
@@ -34,10 +33,16 @@ import (
 )
 
 // ParseQueryDSL parse query DSL and return searchRequest
-func ParseQueryDSL(q *meta.ZincQuery, mappings *meta.Mappings, analyzers map[string]*analysis.Analyzer) (bluge.SearchRequest, error) {
+func ParseQueryDSL(
+	q *meta.ZincQuery,
+	mappings *meta.Mappings,
+	analyzers map[string]*analysis.Analyzer,
+	maxResults int,
+	aggregationTermsSize int,
+) (bluge.SearchRequest, error) {
 	// parse size
-	if q.Size > config.Global.MaxResults {
-		q.Size = config.Global.MaxResults
+	if q.Size > maxResults {
+		q.Size = maxResults
 	}
 
 	// parse query
@@ -70,7 +75,7 @@ func ParseQueryDSL(q *meta.ZincQuery, mappings *meta.Mappings, analyzers map[str
 
 	// parse aggregations
 	if q.Aggregations != nil {
-		if err := aggregation.Request(request, q.Aggregations, mappings); err != nil {
+		if err := aggregation.Request(request, q.Aggregations, mappings, aggregationTermsSize); err != nil {
 			return nil, err
 		}
 	}

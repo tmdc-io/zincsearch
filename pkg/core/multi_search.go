@@ -26,12 +26,13 @@ import (
 	"github.com/rs/zerolog/log"
 
 	zincsearch "github.com/zinclabs/zincsearch/pkg/bluge/search"
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/uquery"
 	"github.com/zinclabs/zincsearch/pkg/uquery/timerange"
 )
 
-func MultiSearch(indexNames []string, query *meta.ZincQuery) (*meta.SearchResponse, error) {
+func MultiSearch(indexNames []string, query *meta.ZincQuery, cfg *config.Config) (*meta.SearchResponse, error) {
 	var mappings *meta.Mappings
 	var analyzers map[string]*analysis.Analyzer
 	var readers []*bluge.Reader
@@ -54,7 +55,7 @@ func MultiSearch(indexNames []string, query *meta.ZincQuery) (*meta.SearchRespon
 			}
 		}
 
-		reader, err := index.GetReaders(timeMin, timeMax)
+		reader, err := index.GetReaders(timeMin, timeMax, cfg.Shard.GoroutineNum)
 		if err != nil {
 			return nil, err
 		}
@@ -80,7 +81,7 @@ func MultiSearch(indexNames []string, query *meta.ZincQuery) (*meta.SearchRespon
 		}
 	}()
 
-	_, err := uquery.ParseQueryDSL(query, mappings, analyzers)
+	_, err := uquery.ParseQueryDSL(query, mappings, analyzers, cfg.MaxResults, cfg.AggregationTermsSize)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,7 @@ func MultiSearch(indexNames []string, query *meta.ZincQuery) (*meta.SearchRespon
 	}
 
 	// dmi, err := bluge.MultiSearch(ctx, searchRequest, readers...)
-	dmi, err := zincsearch.MultiSearch(ctx, query, mappings, analyzers, readers...)
+	dmi, err := zincsearch.MultiSearch(ctx, query, mappings, analyzers, cfg, readers...)
 	if err != nil {
 		log.Printf("core.MultiSearchV2: error executing search: %s", err.Error())
 		if err == context.DeadlineExceeded {

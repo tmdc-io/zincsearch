@@ -36,7 +36,8 @@ func NewESInfo(c *gin.Context) *ESInfo {
 			version = matches[0]
 		}
 	}
-	if v := strings.ToUpper(config.Global.Plugin.ES.Version); v != "" {
+	cfg := config.GetConfig(c)
+	if v := strings.ToUpper(cfg.Plugin.ES.Version); v != "" {
 		version = v
 	}
 	return &ESInfo{

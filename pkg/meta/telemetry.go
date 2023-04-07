@@ -27,7 +27,7 @@ var (
 	SEGMENT_CLIENT analytics.Client
 )
 
-func init() {
+func NewTelemetry() {
 
 	cf := analytics.Config{
 		Interval:  15 * time.Second,

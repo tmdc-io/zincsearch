@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -84,11 +85,11 @@ func TestMultiSearch(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
+	cfg := config.NewGlobalConfig()
 	indexNames := []string{"TestMultiSearch.index_1", "TestMultiSearch.index_2"}
 	t.Run("prepare", func(t *testing.T) {
 		for _, indexName := range indexNames {
-			index, err := NewIndex(indexName, "disk", 2)
+			index, err := NewIndex(indexName, "disk", 2, cfg)
 			assert.NoError(t, err)
 			assert.NotNil(t, index)
 
@@ -102,9 +103,9 @@ func TestMultiSearch(t *testing.T) {
 			var err error
 			var got *meta.SearchResponse
 			if tt.args.indexName == "" {
-				got, err = MultiSearch(nil, tt.args.query)
+				got, err = MultiSearch(nil, tt.args.query, cfg)
 			} else {
-				got, err = MultiSearch([]string{tt.args.indexName}, tt.args.query)
+				got, err = MultiSearch([]string{tt.args.indexName}, tt.args.query, cfg)
 			}
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -117,7 +118,7 @@ func TestMultiSearch(t *testing.T) {
 
 	t.Run("cleanup", func(t *testing.T) {
 		for _, indexName := range indexNames {
-			err := DeleteIndex(indexName)
+			err := DeleteIndex(indexName, cfg.DataPath)
 			assert.NoError(t, err)
 		}
 	})

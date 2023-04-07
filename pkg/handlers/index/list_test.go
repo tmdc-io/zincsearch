@@ -16,6 +16,7 @@
 package index
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"testing"
 
@@ -28,8 +29,9 @@ import (
 )
 
 func TestList(t *testing.T) {
+	cfg := config.NewGlobalConfig()
 	t.Run("prepare", func(t *testing.T) {
-		index, err := core.NewIndex("TestIndexList.index_1", "disk", 2)
+		index, err := core.NewIndex("TestIndexList.index_1", "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -75,14 +77,15 @@ func TestList(t *testing.T) {
 	})
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := core.DeleteIndex("TestIndexList.index_1")
+		err := core.DeleteIndex("TestIndexList.index_1", cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }
 
 func TestIndexNameList(t *testing.T) {
+	cfg := config.NewGlobalConfig()
 	t.Run("prepare", func(t *testing.T) {
-		index, err := core.NewIndex("TestIndexNameList.index_1", "disk", 2)
+		index, err := core.NewIndex("TestIndexNameList.index_1", "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -109,7 +112,7 @@ func TestIndexNameList(t *testing.T) {
 	})
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := core.DeleteIndex("TestIndexNameList.index_1")
+		err := core.DeleteIndex("TestIndexNameList.index_1", cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

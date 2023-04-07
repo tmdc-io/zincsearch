@@ -17,6 +17,7 @@ package index
 
 import (
 	"fmt"
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"testing"
 
@@ -26,8 +27,9 @@ import (
 )
 
 func TestSettings(t *testing.T) {
+	cfg := config.NewGlobalConfig()
 	t.Run("create index", func(t *testing.T) {
-		index, err := core.NewIndex("TestSettings.index_1", "disk", 2)
+		index, err := core.NewIndex("TestSettings.index_1", "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -176,7 +178,7 @@ func TestSettings(t *testing.T) {
 
 	t.Run("delete index", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
-			_ = core.DeleteIndex(fmt.Sprintf("TestSettings.index_%d", i))
+			_ = core.DeleteIndex(fmt.Sprintf("TestSettings.index_%d", i), cfg.DataPath)
 		}
 	})
 }

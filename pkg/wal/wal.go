@@ -19,7 +19,6 @@ import (
 	"path"
 
 	"github.com/zinclabs/wal"
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/errors"
 	"github.com/zinclabs/zincsearch/pkg/wal/redo"
 )
@@ -30,7 +29,10 @@ type Log struct {
 	Redo *redo.Log
 }
 
-func Open(indexName string) (*Log, error) {
+func Open(
+	indexName, dataPath string,
+	walRedoLogNoSync bool,
+) (*Log, error) {
 	var err error
 	l := new(Log)
 	l.name = indexName
@@ -43,15 +45,15 @@ func Open(indexName string) (*Log, error) {
 		FilePerms:        0640,     // Permissions for the created data files
 		FillID:           true,     // Allow writes with a zero ID
 	}
-	l.log, err = wal.Open(path.Join(config.Global.DataPath, indexName, "wal"), opt)
+	l.log, err = wal.Open(path.Join(dataPath, indexName, "wal"), opt)
 	if err != nil {
 		return nil, errors.New(errors.ErrorTypeRuntimeException, "open wal error").Cause(err)
 	}
 
 	redoOpt := redo.DefaultOptions()
-	redoOpt.NoSync = config.Global.WalRedoLogNoSync
+	redoOpt.NoSync = walRedoLogNoSync
 	redoOpt.NoCopy = true
-	l.Redo, err = redo.Open(path.Join(config.Global.DataPath, indexName, "redo"), redoOpt)
+	l.Redo, err = redo.Open(path.Join(dataPath, indexName, "redo"), redoOpt)
 	if err != nil {
 		return nil, errors.New(errors.ErrorTypeRuntimeException, "open wal redo error").Cause(err)
 	}

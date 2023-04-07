@@ -22,7 +22,6 @@ import (
 
 	"github.com/blugelabs/bluge"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	zincanalysis "github.com/zinclabs/zincsearch/pkg/uquery/analysis"
 	"github.com/zinclabs/zincsearch/pkg/zutils"
@@ -153,7 +152,9 @@ func (s *IndexShard) buildField(mappings *meta.Mappings, bdoc *bluge.Document, k
 }
 
 // CheckDocument checks if the document is valid.
-func (s *IndexShard) CheckDocument(docID string, doc map[string]interface{}, update bool, shard int64) ([]byte, error) {
+func (s *IndexShard) CheckDocument(
+	docID string, doc map[string]interface{}, update bool, shard int64, enableTextKeywordMapping bool,
+) ([]byte, error) {
 	// Pick the index mapping from the cache if it already exists
 	mappings := s.root.GetMappings()
 	mappingsNeedsUpdate := false
@@ -165,7 +166,7 @@ func (s *IndexShard) CheckDocument(docID string, doc map[string]interface{}, upd
 			continue
 		}
 
-		if update := s.checkProperty(mappings, key, value); update {
+		if update := s.checkProperty(mappings, key, value, enableTextKeywordMapping); update {
 			mappingsNeedsUpdate = true
 		}
 
@@ -225,10 +226,10 @@ func (s *IndexShard) CheckDocument(docID string, doc map[string]interface{}, upd
 }
 
 // checkProperty returns if need update mappings
-func (s *IndexShard) checkProperty(mappings *meta.Mappings, key string, value interface{}) bool {
+func (s *IndexShard) checkProperty(mappings *meta.Mappings, key string, value interface{}, enableTextKeywordMapping bool) bool {
 	prop, ok := mappings.GetProperty(key)
 	if ok {
-		if config.Global.EnableTextKeywordMapping && prop.Type == "text" {
+		if enableTextKeywordMapping && prop.Type == "text" {
 			if _, ok := mappings.GetProperty(key + ".keyword"); ok {
 				return false
 			}
@@ -246,7 +247,7 @@ func (s *IndexShard) checkProperty(mappings *meta.Mappings, key string, value in
 			mappings.SetProperty(key, prop)
 		} else {
 			newProp := meta.NewProperty("text")
-			if config.Global.EnableTextKeywordMapping {
+			if enableTextKeywordMapping {
 				p := meta.NewProperty("keyword")
 				newProp.AddField("keyword", p)
 				mappings.SetProperty(key+".keyword", p)
@@ -268,7 +269,7 @@ func (s *IndexShard) checkProperty(mappings *meta.Mappings, key string, value in
 						mappings.SetProperty(key, prop)
 					} else {
 						newProp := meta.NewProperty("text")
-						if config.Global.EnableTextKeywordMapping {
+						if enableTextKeywordMapping {
 							p := meta.NewProperty("keyword")
 							newProp.AddField("keyword", p)
 							mappings.SetProperty(key+".keyword", p)

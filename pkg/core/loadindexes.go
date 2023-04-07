@@ -17,7 +17,7 @@ package core
 
 import (
 	"github.com/rs/zerolog/log"
-
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/errors"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/metadata"
@@ -27,8 +27,8 @@ import (
 	"github.com/zinclabs/zincsearch/pkg/zutils/json"
 )
 
-func LoadZincIndexesFromMetadata(version string) error {
-	indexes, err := metadata.Index.List(0, 0)
+func LoadZincIndexesFromMetadata(version string, cfg *config.Config) error {
+	indexes, err := metadata.Index.List(0, 0, cfg)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func LoadZincIndexesFromMetadata(version string) error {
 		}
 		if version != meta.Version {
 			log.Info().Msgf("Upgrade index[%s] from version[%s] to version[%s]", readIndex.Name, version, meta.Version)
-			if err := upgrade.Do(version, readIndex); err != nil {
+			if err := upgrade.Do(version, readIndex, cfg); err != nil {
 				return err
 			}
 			// save updated metadata
@@ -87,9 +87,13 @@ func LoadZincIndexesFromMetadata(version string) error {
 		index.shards = make(map[string]*IndexShard, index.shardNum)
 		for id := range index.ref.Shards {
 			index.shards[id] = &IndexShard{
-				root: index,
-				ref:  index.ref.Shards[id],
-				name: index.ref.Name + "/" + index.ref.Shards[id].ID,
+				root:             index,
+				ref:              index.ref.Shards[id],
+				name:             index.ref.Name + "/" + index.ref.Shards[id].ID,
+				dataPath:         cfg.DataPath,
+				walRedoLogNoSync: cfg.WalRedoLogNoSync,
+				batchSize:        cfg.BatchSize,
+				maxSize:          cfg.Shard.MaxSize,
 			}
 			index.shards[id].shards = make([]*IndexSecondShard, index.ref.Shards[id].ShardNum)
 			for j := range index.ref.Shards[id].Shards {

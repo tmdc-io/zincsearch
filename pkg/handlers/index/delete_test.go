@@ -16,6 +16,7 @@
 package index
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"testing"
 
@@ -74,12 +75,12 @@ func TestDelete(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
+	cfg := config.NewGlobalConfig()
 	t.Run("prepare", func(t *testing.T) {
-		prepareIndex(t, "TestIndexDelete.index_1", "disk")
-		prepareIndex(t, "log-3342-44-TestIndexDelete", "disk")
-		prepareIndex(t, "log-3122-44-TestIndexDelete", "disk")
-		prepareIndex(t, "log-vvs323-44-TestIndexDelete", "disk")
+		prepareIndex(t, "TestIndexDelete.index_1", "disk", cfg)
+		prepareIndex(t, "log-3342-44-TestIndexDelete", "disk", cfg)
+		prepareIndex(t, "log-3122-44-TestIndexDelete", "disk", cfg)
+		prepareIndex(t, "log-vvs323-44-TestIndexDelete", "disk", cfg)
 	})
 
 	for _, tt := range tests {
@@ -97,8 +98,8 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func prepareIndex(t *testing.T, name, storageType string) {
-	index, err := core.NewIndex(name, storageType, 2)
+func prepareIndex(t *testing.T, name, storageType string, cfg *config.Config) {
+	index, err := core.NewIndex(name, storageType, 2, cfg)
 	assert.NoError(t, err)
 	assert.NotNil(t, index)
 

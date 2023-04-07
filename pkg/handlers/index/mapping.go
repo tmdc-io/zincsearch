@@ -16,6 +16,7 @@
 package index
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -73,8 +74,8 @@ func SetMapping(c *gin.Context) {
 		zutils.GinRenderJSON(c, http.StatusBadRequest, meta.HTTPResponseError{Error: err.Error()})
 		return
 	}
-
-	mappings, err := mappings.Request(nil, mappingRequest)
+	cfg := config.GetConfig(c)
+	mappings, err := mappings.Request(nil, mappingRequest, cfg.EnableTextKeywordMapping)
 	if err != nil {
 		zutils.GinRenderJSON(c, http.StatusBadRequest, meta.HTTPResponseError{Error: err.Error()})
 		return

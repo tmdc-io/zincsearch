@@ -55,7 +55,7 @@ func SearchDSL(c *gin.Context) {
 		return
 	}
 
-	resp, err := searchIndex(strings.Split(indexName, ","), query)
+	resp, err := searchIndex(strings.Split(indexName, ","), query, config.GetConfig(c))
 	if err != nil {
 		errors.HandleError(c, err)
 		return
@@ -72,7 +72,7 @@ func SearchDSL(c *gin.Context) {
 			eventData["search_index_size_in_mb"] = storageSize / 1024 / 1024
 			eventData["time_taken_to_search_in_ms"] = resp.Took
 			eventData["aggregations_count"] = len(query.Aggregations)
-			core.Telemetry.Event("search", eventData)
+			core.GetTelemetry(c).Event("search", eventData)
 		}
 	}
 
@@ -104,7 +104,8 @@ func MultipleSearch(c *gin.Context) {
 	scanner := bufio.NewScanner(c.Request.Body)
 	defer c.Request.Body.Close()
 
-	maxCapacityPerLine := config.Global.MaxDocumentSize
+	cfg := config.GetConfig(c)
+	maxCapacityPerLine := cfg.MaxDocumentSize
 	buf := make([]byte, maxCapacityPerLine)
 	scanner.Buffer(buf, maxCapacityPerLine)
 
@@ -123,7 +124,7 @@ func MultipleSearch(c *gin.Context) {
 				continue
 			}
 			// search query
-			resp, err := searchIndex(indexNames, query)
+			resp, err := searchIndex(indexNames, query, cfg)
 			if err != nil {
 				log.Error().Msgf("handlers.search.MultipleSearch.searchIndex: err %s", err.Error())
 				responses = append(responses, &meta.SearchResponse{Error: err.Error()})
@@ -155,7 +156,7 @@ func MultipleSearch(c *gin.Context) {
 	zutils.GinRenderJSON(c, http.StatusOK, gin.H{"responses": responses})
 }
 
-func searchIndex(indexNames []string, query *meta.ZincQuery) (*meta.SearchResponse, error) {
+func searchIndex(indexNames []string, query *meta.ZincQuery, cfg *config.Config) (*meta.SearchResponse, error) {
 	indexName := ""
 	if len(indexNames) > 0 {
 		indexName = indexNames[0]
@@ -163,13 +164,13 @@ func searchIndex(indexNames []string, query *meta.ZincQuery) (*meta.SearchRespon
 	var err error
 	var resp *meta.SearchResponse
 	if indexName == "" || strings.HasSuffix(indexName, "*") || strings.HasPrefix(indexName, "*") || len(indexNames) > 1 {
-		resp, err = core.MultiSearch(indexNames, query)
+		resp, err = core.MultiSearch(indexNames, query, cfg)
 	} else {
 		index, exists := core.GetIndex(indexName)
 		if !exists {
 			return nil, fmt.Errorf("index %s does not exists", indexName)
 		}
-		resp, err = index.Search(query)
+		resp, err = index.Search(query, cfg)
 	}
 	return resp, err
 }
