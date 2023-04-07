@@ -30,7 +30,8 @@ type Log struct {
 }
 
 func Open(
-	indexName, dataPath string,
+	indexName,
+	dataPath string,
 	walRedoLogNoSync bool,
 ) (*Log, error) {
 	var err error

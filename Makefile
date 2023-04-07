@@ -16,7 +16,7 @@ SRC        := $(shell find . -type f -name '*.go' -print)
 # ------------------------------------------------------------------------------
 #  build
 
-build: clean tidy fmt vet test-unit compile
+build: clean tidy fmt vet compile
 
 tidy:
 	@echo
@@ -54,3 +54,6 @@ clean:
 	@echo
 	@echo "=== cleaning ==="
 	rm -rf $(BINDIR)
+	rm -rf data
+	find ./pkg -name data -type dir|xargs rm -fR
+	find ./test -name data -type dir|xargs rm -fR

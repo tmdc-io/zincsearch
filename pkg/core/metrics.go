@@ -22,7 +22,6 @@ import (
 
 var ZINC_METRICS *ginprometheus.Metric
 
-// TODO: Medium - Make this a real Constructor
 func init() {
 	ZINC_METRICS = &ginprometheus.Metric{
 		ID:          "indexStats",                 // Identifier

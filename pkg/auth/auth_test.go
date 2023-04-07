@@ -16,6 +16,7 @@
 package auth
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/ider"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -80,12 +81,7 @@ func TestVerifyCredentials(t *testing.T) {
 		},
 	}
 
-	//cfg := config.NewTestGlobalConfig([]string{"../../.env"})
-	//node, _ := ider.NewNode(1)
-	//init storage
-	//metadata.NewStorager(cfg)
-	//init auth
-	//FirstStart(node)
+	FirstStart(ider.LocalNode())
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

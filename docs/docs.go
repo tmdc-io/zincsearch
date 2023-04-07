@@ -3766,6 +3766,6 @@ var SwaggerInfo = &swag.Spec{
 	SwaggerTemplate:  docTemplate,
 }
 
-func init() {
-	swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
-}
+//func init() {
+//	swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
+//}

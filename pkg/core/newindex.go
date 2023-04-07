@@ -80,10 +80,11 @@ func NewIndex(name, storageType string, shardNum int64, cfg *config.Config) (*In
 	index.ref.ShardNum = shardNum
 	index.ref.Shards = make(map[string]*meta.IndexShard, index.shardNum)
 	for i := int64(0); i < index.shardNum; i++ {
-		node, err := ider.NewNode(int(i))
-		if err != nil {
-			return nil, err
-		}
+		//node, err := ider.NewNode(int(i))
+		//if err != nil {
+		//	return nil, err
+		//}
+		node := ider.LocalNode()
 		id := node.Generate()
 		shard := &meta.IndexShard{ID: id, ShardNum: 1}
 		for j := int64(0); j < shard.ShardNum; j++ {

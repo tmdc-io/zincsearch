@@ -16,7 +16,6 @@
 package wal
 
 import (
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"log"
 	"os"
 	"testing"
@@ -30,8 +29,7 @@ const name = "walTest"
 
 func TestMain(m *testing.M) {
 	var err error
-	cfg := config.NewGlobalConfig()
-	l, err = Open(name, cfg.DataPath, cfg.WalRedoLogNoSync)
+	l, err = Open(name, "./data", false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,8 +44,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestOpenClose(t *testing.T) {
-	cfg := config.NewGlobalConfig()
-	l, err := Open("walTest2", cfg.DataPath, cfg.WalRedoLogNoSync)
+	l, err := Open("walTest2", "./data", false)
 	assert.NoError(t, err)
 	err = l.Close()
 	assert.NoError(t, err)

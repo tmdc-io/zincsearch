@@ -77,7 +77,7 @@ func TestCreateUser(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	node, _ := ider.NewNode(1)
+	node := ider.LocalNode()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := CreateUser(tt.args.id, tt.args.name, tt.args.plaintextPassword, tt.args.role, node)

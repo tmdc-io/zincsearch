@@ -39,7 +39,7 @@ func BenchmarkBulk(b *testing.B) {
 
 	b.ResetTimer()
 	cfg := config.NewEnvFileGlobalConfig([]string{"../../.env"})
-	node, _ := ider.NewNode(1)
+	node := ider.LocalNode()
 	for i := 0; i < b.N; i++ {
 		_, err = document.BulkWorker(target, f, cfg.MaxDocumentSize, cfg.EnableTextKeywordMapping, cfg.Shard.GoroutineNum, node)
 		if err != nil {

@@ -64,10 +64,12 @@ func main() {
 
 	cfg := config.NewGlobalConfig()
 
-	node, nodeErr := ider.NewNode(cfg.NodeID)
-	if nodeErr != nil {
-		panic(nodeErr)
-	}
+	//node, nodeErr := ider.NewNode(cfg.NodeID)
+	//if nodeErr != nil {
+	//	panic(nodeErr)
+	//}
+
+	node := ider.LocalNode()
 
 	// Initialize telemetry
 	t := telemetry(cfg, node)
@@ -77,10 +79,12 @@ func main() {
 	profiling(cfg, t)
 
 	//init storage
-	//s := metadata.NewStorager(cfg)
+	metadata.NewStorager(cfg)
 	//init auth
 	auth.FirstStart(node)
+	//init index list
 	core.NewIndexList(cfg)
+	core.NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
 
 	// HTTP init
 	app := gin.New()

@@ -16,6 +16,8 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
+	"github.com/zinclabs/zincsearch/pkg/metadata"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -26,6 +28,10 @@ func TestAliasList_AddIndexesToAlias(t *testing.T) {
 		alias   string
 		indexes []string
 	}
+	cfg := config.NewGlobalConfig()
+	metadata.NewStorager(cfg)
+	NewIndexList(cfg)
+	NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
 	tests := []struct {
 		name        string
 		nFn         func(al *AliasList)
@@ -46,7 +52,6 @@ func TestAliasList_AddIndexesToAlias(t *testing.T) {
 			wantIndexes: []string{"index_0", "index_1", "index_2"},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			al := NewAliasList()

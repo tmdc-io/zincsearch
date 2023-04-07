@@ -18,7 +18,6 @@ package ider
 import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"github.com/zinclabs/zincsearch/pkg/zutils/base62"
 )
 
@@ -40,29 +39,18 @@ func InjectNode(n *Node) gin.HandlerFunc {
 
 var local *Node
 
-func init() {
-	var err error
-	local, err = NewNode(1)
-	if err != nil {
-		log.Fatal().Msgf("id generater init[local] err %s", err.Error())
-	}
-}
-
 type Node struct {
 	node *snowflake.Node
 }
 
 func LocalNode() *Node {
 	if local == nil {
-		local, _ = NewNode(1)
+		local, _ = newNode(1)
 	}
 	return local
 }
 
-func NewNode(id int) (*Node, error) {
-	if local != nil {
-		return local, nil
-	}
+func newNode(id int) (*Node, error) {
 	node, err := snowflake.NewNode(int64(id % 1024))
 	return &Node{node: node}, err
 }

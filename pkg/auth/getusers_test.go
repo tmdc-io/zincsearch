@@ -24,7 +24,7 @@ import (
 )
 
 func TestGetAllUsersWorker(t *testing.T) {
-	node, _ := ider.NewNode(1)
+	node := ider.LocalNode()
 	t.Run("prepare", func(t *testing.T) {
 		u, err := CreateUser("test", "test", "test", "admin", node)
 		assert.NoError(t, err)

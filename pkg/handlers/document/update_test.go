@@ -36,6 +36,9 @@ func TestUpdate(t *testing.T) {
 		result  string
 	}
 	cfg := config.NewGlobalConfig()
+	//metadata.NewStorager(cfg)
+	//core.NewIndexList(cfg)
+	//core.NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
 	tests := []struct {
 		name string
 		args args

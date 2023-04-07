@@ -16,12 +16,11 @@
 package chs
 
 import (
+	"github.com/blugelabs/bluge/analysis"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/blugelabs/bluge/analysis"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestLoadDict(t *testing.T) {
@@ -29,6 +28,10 @@ func TestLoadDict(t *testing.T) {
 		enable bool
 		embed  string
 	}
+	//cfg := config.NewEnvFileGlobalConfig([]string{"../../../.env"})
+	//metadata.NewStorager(cfg)
+	//core.NewIndexList(cfg)
+	//core.NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
 	tests := []struct {
 		name string
 		args args

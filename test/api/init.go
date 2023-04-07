@@ -16,9 +16,11 @@
 package api
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/auth"
 	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/core"
 	"github.com/zinclabs/zincsearch/pkg/ider"
+	"github.com/zinclabs/zincsearch/pkg/metadata"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -86,9 +88,10 @@ var (
 func server() *gin.Engine {
 	if r == nil {
 		cfg := config.NewEnvFileGlobalConfig([]string{"../../.env"})
-		//node, _ := ider.NewNode(cfg.NodeID)
-		//metadata.NewStorager(cfg)
-		//auth.FirstStart(node)
+		metadata.NewStorager(cfg)
+		core.NewIndexList(cfg)
+		core.NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
+		auth.FirstStart(ider.LocalNode())
 		once.Do(func() {
 			gin.SetMode(gin.ReleaseMode)
 			r = gin.New()

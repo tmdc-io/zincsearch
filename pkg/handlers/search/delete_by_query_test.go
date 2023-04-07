@@ -2,6 +2,7 @@ package search
 
 import (
 	"github.com/zinclabs/zincsearch/pkg/config"
+	"github.com/zinclabs/zincsearch/pkg/metadata"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -44,7 +45,10 @@ type want struct {
 }
 
 func TestDeleteByQuery(t *testing.T) {
-	cfg := config.NewGlobalConfig()
+	cfg := config.NewEnvFileGlobalConfig([]string{"../../../.env"})
+	metadata.NewStorager(cfg)
+	core.NewIndexList(cfg)
+	core.NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
 	tests := []struct {
 		name string
 		arg  arg
@@ -112,7 +116,7 @@ func TestDeleteByQuery(t *testing.T) {
 			},
 		},
 	}
-	node, _ := ider.NewNode(1)
+	node := ider.LocalNode()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			index, err := core.NewIndex("TestDeleteByQuery.index", "disk", 2, cfg)
