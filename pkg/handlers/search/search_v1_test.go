@@ -34,7 +34,7 @@ func TestSearchV1(t *testing.T) {
 		params map[string]string
 		result string
 	}
-	cfg := config.NewGlobalConfig()
+	cfg := config.NewEnvFileGlobalConfig([]string{"../../../.env"})
 	tests := []struct {
 		name string
 		args args

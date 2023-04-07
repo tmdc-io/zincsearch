@@ -62,7 +62,7 @@ func TestGetUser(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	node := ider.LocalNode()
+	node, _ := ider.NewNode(1)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.input != nil {

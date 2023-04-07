@@ -91,14 +91,15 @@ func server() *gin.Engine {
 		metadata.NewStorager(cfg)
 		core.NewIndexList(cfg)
 		core.NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
-		auth.FirstStart(ider.LocalNode())
+		node, _ := ider.NewNode(cfg.NodeID)
+		auth.FirstStart(node)
 		once.Do(func() {
 			gin.SetMode(gin.ReleaseMode)
 			r = gin.New()
 			r.Use(gin.Recovery())
 			r.Use(config.InjectConfig(cfg))
-			r.Use(ider.InjectNode(ider.LocalNode()))
-			r.Use(core.InjectTelemetry(core.NewTelemetry(cfg.TelemetryEnable, ider.LocalNode())))
+			r.Use(ider.InjectNode(node))
+			r.Use(core.InjectTelemetry(core.NewTelemetry(cfg.TelemetryEnable, node)))
 			routes.SetRoutes(r)
 		})
 	}

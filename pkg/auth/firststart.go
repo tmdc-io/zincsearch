@@ -22,7 +22,6 @@ import (
 	"os"
 )
 
-// func init() {
 func FirstStart(node *ider.Node) {
 	// init first start
 	firstStart, err := isFirstStart()
@@ -30,7 +29,6 @@ func FirstStart(node *ider.Node) {
 		log.Print(err)
 	}
 	if firstStart {
-		node := ider.LocalNode()
 		if err := initFirstUser(node); err != nil {
 			log.Fatal().Err(err).Msg("init first user")
 		}

@@ -116,7 +116,7 @@ func TestDeleteByQuery(t *testing.T) {
 			},
 		},
 	}
-	node := ider.LocalNode()
+	node, _ := ider.NewNode(cfg.NodeID)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			index, err := core.NewIndex("TestDeleteByQuery.index", "disk", 2, cfg)

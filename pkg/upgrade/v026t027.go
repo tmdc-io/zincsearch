@@ -119,8 +119,7 @@ func UpgradeMetadataFromV026T027(data []byte, shardNum int64) (*meta.Index, erro
 	shardNames := make([]string, shardNum)
 	shards := make(map[string]*meta.IndexShard, shardNum)
 	for i := int64(0); i < shardNum; i++ {
-		//node, err := ider.NewNode(int(i))
-		node := ider.LocalNode()
+		node, err := ider.NewNode(int(i))
 		if err != nil {
 			return nil, err
 		}

@@ -26,7 +26,7 @@ import (
 func TestTelemetry(t *testing.T) {
 	indexName := "TestTelemetry.index_1"
 	cfg := config.NewGlobalConfig()
-	node := ider.LocalNode()
+	node, _ := ider.NewNode(cfg.NodeID)
 	t.Run("prepare", func(t *testing.T) {
 		index, err := NewIndex(indexName, "disk", 1, cfg)
 		assert.NoError(t, err)

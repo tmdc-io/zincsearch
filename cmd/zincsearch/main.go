@@ -64,12 +64,10 @@ func main() {
 
 	cfg := config.NewGlobalConfig()
 
-	//node, nodeErr := ider.NewNode(cfg.NodeID)
-	//if nodeErr != nil {
-	//	panic(nodeErr)
-	//}
-
-	node := ider.LocalNode()
+	node, nodeErr := ider.NewNode(cfg.NodeID)
+	if nodeErr != nil {
+		panic(nodeErr)
+	}
 
 	// Initialize telemetry
 	t := telemetry(cfg, node)

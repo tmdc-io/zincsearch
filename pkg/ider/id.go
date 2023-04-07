@@ -37,20 +37,11 @@ func InjectNode(n *Node) gin.HandlerFunc {
 	}
 }
 
-var local *Node
-
 type Node struct {
 	node *snowflake.Node
 }
 
-func LocalNode() *Node {
-	if local == nil {
-		local, _ = newNode(1)
-	}
-	return local
-}
-
-func newNode(id int) (*Node, error) {
+func NewNode(id int) (*Node, error) {
 	node, err := snowflake.NewNode(int64(id % 1024))
 	return &Node{node: node}, err
 }

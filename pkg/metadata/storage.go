@@ -30,8 +30,6 @@ var ErrorKeyNotExists = errors.New("key not exists")
 
 var db storage.Storager
 
-//var cfg = config.NewEnvFileGlobalConfig([]string{"../../.env"})
-
 func NewStorager(cfg *config.Config) {
 	//func init() {
 	if strings.ToLower(cfg.ServerMode) == "cluster" {

@@ -33,11 +33,13 @@ func NewGinContext() (*gin.Context, *httptest.ResponseRecorder) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
+	cfg := config.NewEnvFileGlobalConfig([]string{"../../.env", "../../../.env"})
+	node, _ := ider.NewNode(cfg.NodeID)
 	//adding the global config to the gin context
-	c.Set(config.GlobalConfigContextKey, config.NewEnvFileGlobalConfig([]string{"../../.env"}))
-	c.Set(ider.NodeContextKey, ider.LocalNode())
-	//c.Set(core.GlobalTelemetryContextKey, core.NewTelemetry(false, ider.LocalNode()))
-	//auth.FirstStart(ider.LocalNode())
+	c.Set(config.GlobalConfigContextKey, cfg)
+	c.Set(ider.NodeContextKey, node)
+	//c.Set(core.GlobalTelemetryContextKey, core.NewTelemetry(false, node))
+	//auth.FirstStart(node)
 
 	req := &http.Request{
 		URL:    &url.URL{},

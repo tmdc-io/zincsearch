@@ -28,10 +28,6 @@ func TestLoadDict(t *testing.T) {
 		enable bool
 		embed  string
 	}
-	//cfg := config.NewEnvFileGlobalConfig([]string{"../../../.env"})
-	//metadata.NewStorager(cfg)
-	//core.NewIndexList(cfg)
-	//core.NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
 	tests := []struct {
 		name string
 		args args
@@ -69,6 +65,7 @@ func TestLoadDict(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			NewSegmenter(tt.args.enable, tt.args.embed, "./data")
 			loadDict(tt.args.enable, tt.args.embed, "./data")
 		})
 	}
