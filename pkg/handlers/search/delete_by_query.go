@@ -1,6 +1,7 @@
 package search
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"time"
 
@@ -35,8 +36,10 @@ func DeleteByQuery(c *gin.Context) {
 		return
 	}
 
+	cfg := config.GetConfig(c)
+
 	indexName := c.Param("target")
-	resp, err := searchIndex([]string{indexName}, query)
+	resp, err := searchIndex([]string{indexName}, query, cfg)
 	if err != nil {
 		errors.HandleError(c, err)
 		return
@@ -45,7 +48,7 @@ func DeleteByQuery(c *gin.Context) {
 	failures := []string{}
 	for _, hit := range resp.Hits.Hits {
 		index, _ := core.GetIndex(hit.Index)
-		err := index.DeleteDocument(hit.ID)
+		err := index.DeleteDocument(hit.ID, cfg.Shard.GoroutineNum)
 		if err != nil {
 			failures = append(failures, hit.ID)
 		}

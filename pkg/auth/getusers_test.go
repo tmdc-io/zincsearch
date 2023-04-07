@@ -16,6 +16,7 @@
 package auth
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/ider"
 	"testing"
 	"time"
 
@@ -23,8 +24,9 @@ import (
 )
 
 func TestGetAllUsersWorker(t *testing.T) {
+	node := ider.LocalNode()
 	t.Run("prepare", func(t *testing.T) {
-		u, err := CreateUser("test", "test", "test", "admin")
+		u, err := CreateUser("test", "test", "test", "admin", node)
 		assert.NoError(t, err)
 		assert.NotNil(t, u)
 	})

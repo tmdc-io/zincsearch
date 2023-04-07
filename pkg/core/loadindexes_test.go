@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,8 +25,9 @@ import (
 )
 
 func TestLoadIndexes(t *testing.T) {
+	cfg := config.NewGlobalConfig()
 	t.Run("create some index", func(t *testing.T) {
-		index, err := NewIndex("TestLoadIndexes.index_1", "disk", 2)
+		index, err := NewIndex("TestLoadIndexes.index_1", "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -46,13 +48,13 @@ func TestLoadIndexes(t *testing.T) {
 
 	t.Run("load user index from disk", func(t *testing.T) {
 		ZINC_INDEX_LIST.Close()
-		err := LoadZincIndexesFromMetadata(meta.Version)
+		err := LoadZincIndexesFromMetadata(meta.Version, cfg)
 		assert.NoError(t, err)
 		assert.GreaterOrEqual(t, ZINC_INDEX_LIST.Len(), 0)
 	})
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := DeleteIndex("TestLoadIndexes.index_1")
+		err := DeleteIndex("TestLoadIndexes.index_1", cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

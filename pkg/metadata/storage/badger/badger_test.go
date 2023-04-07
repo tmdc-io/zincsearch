@@ -16,6 +16,7 @@
 package badger
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,8 +51,8 @@ func Test_badgerStorage_List(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
-	store := New("/zincsearch/test")
+	cfg := config.NewGlobalConfig()
+	store := New("/zincsearch/test", cfg.DataPath)
 	defer store.Close()
 	t.Run("prepare", func(t *testing.T) {
 		err := store.Set("/test/foo", []byte("bar"))
@@ -97,8 +98,8 @@ func Test_badgerStorage_Get(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
-	store := New("/zincsearch/test")
+	cfg := config.NewGlobalConfig()
+	store := New("/zincsearch/test", cfg.DataPath)
 	defer store.Close()
 	t.Run("prepare", func(t *testing.T) {
 		err := store.Set("/test/foo", []byte("bar"))
@@ -144,8 +145,8 @@ func Test_badgerStorage_Set(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
-	store := New("/zincsearch/test")
+	cfg := config.NewGlobalConfig()
+	store := New("/zincsearch/test", cfg.DataPath)
 	defer store.Close()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -181,8 +182,8 @@ func Test_badgerStorage_Delete(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
-	store := New("/zincsearch/test")
+	cfg := config.NewGlobalConfig()
+	store := New("/zincsearch/test", cfg.DataPath)
 	defer store.Close()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -16,6 +16,7 @@
 package document
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -48,8 +49,8 @@ func Delete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, meta.HTTPResponseError{Error: "index does not exists"})
 		return
 	}
-
-	err := index.DeleteDocument(docID)
+	cfg := config.GetConfig(c)
+	err := index.DeleteDocument(docID, cfg.Shard.GoroutineNum)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, meta.HTTPResponseError{Error: err.Error()})
 		return

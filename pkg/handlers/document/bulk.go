@@ -18,6 +18,7 @@ package document
 import (
 	"bufio"
 	"errors"
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"io"
 	"net/http"
 	"sync/atomic"
@@ -26,7 +27,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/core"
 	"github.com/zinclabs/zincsearch/pkg/ider"
 	"github.com/zinclabs/zincsearch/pkg/meta"
@@ -51,7 +51,9 @@ func Bulk(c *gin.Context) {
 
 	defer c.Request.Body.Close()
 
-	ret, err := BulkWorker(target, c.Request.Body)
+	cfg := config.GetConfig(c)
+	node := ider.GetNode(c)
+	ret, err := BulkWorker(target, c.Request.Body, cfg.MaxDocumentSize, cfg.EnableTextKeywordMapping, cfg.Shard.GoroutineNum, node)
 	if err != nil {
 		zutils.GinRenderJSON(c, http.StatusInternalServerError, meta.HTTPResponseError{Error: err.Error()})
 		return
@@ -77,7 +79,9 @@ func ESBulk(c *gin.Context) {
 
 	defer c.Request.Body.Close()
 
-	ret, err := BulkWorker(target, c.Request.Body)
+	cfg := config.GetConfig(c)
+	node := ider.GetNode(c)
+	ret, err := BulkWorker(target, c.Request.Body, cfg.MaxDocumentSize, cfg.EnableTextKeywordMapping, cfg.Shard.GoroutineNum, node)
 	if err != nil {
 		ret.Error = err.Error()
 	}
@@ -90,7 +94,9 @@ func ESBulk(c *gin.Context) {
 	zutils.GinRenderJSON(c, http.StatusOK, ret)
 }
 
-func BulkWorker(target string, body io.Reader) (*BulkResponse, error) {
+func BulkWorker(
+	target string, body io.Reader, maxDocumentSize int, enableTextKeywordMapping bool, goroutineNum int, node *ider.Node,
+) (*BulkResponse, error) {
 	bulkRes := &BulkResponse{Items: []map[string]BulkResponseItem{}}
 
 	// Prepare to read the entire raw text of the body
@@ -98,7 +104,7 @@ func BulkWorker(target string, body io.Reader) (*BulkResponse, error) {
 
 	// Set 1 MB max per line. docs at - https://pkg.go.dev/bufio#pkg-constants
 	// This is the max size of a line in a file that we will process
-	maxCapacityPerLine := config.Global.MaxDocumentSize
+	maxCapacityPerLine := maxDocumentSize
 	buf := make([]byte, maxCapacityPerLine)
 	scanner.Buffer(buf, maxCapacityPerLine)
 
@@ -128,7 +134,7 @@ func BulkWorker(target string, body io.Reader) (*BulkResponse, error) {
 				docID = val.(string)
 			}
 			if docID == "" {
-				docID = ider.Generate()
+				docID = node.Generate()
 			} else {
 				update = true
 			}
@@ -163,7 +169,7 @@ func BulkWorker(target string, body io.Reader) (*BulkResponse, error) {
 				return bulkRes, err
 			}
 
-			err = newIndex.CreateDocument(docID, doc, update)
+			err = newIndex.CreateDocument(docID, doc, update, enableTextKeywordMapping)
 			if err != nil {
 				return bulkRes, err
 			}
@@ -208,7 +214,7 @@ func BulkWorker(target string, body io.Reader) (*BulkResponse, error) {
 					}
 
 					// delete
-					err = newIndex.DeleteDocument(docID)
+					err = newIndex.DeleteDocument(docID, goroutineNum)
 					bulkRes.Count++
 					bulkRes.Items = append(bulkRes.Items, map[string]BulkResponseItem{
 						"delete": NewBulkResponseItem(bulkRes.Count, indexName, docID, "deleted", err),

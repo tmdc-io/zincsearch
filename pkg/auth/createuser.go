@@ -28,7 +28,7 @@ import (
 	"github.com/zinclabs/zincsearch/pkg/meta"
 )
 
-func CreateUser(id, name, plaintextPassword, role string) (*meta.User, error) {
+func CreateUser(id, name, plaintextPassword, role string, node *ider.Node) (*meta.User, error) {
 	id = strings.ToLower(id)
 	var newUser *meta.User
 	existingUser, userExists, err := GetUser(id)
@@ -39,7 +39,7 @@ func CreateUser(id, name, plaintextPassword, role string) (*meta.User, error) {
 	if userExists {
 		newUser = existingUser
 		if plaintextPassword != "" {
-			newUser.Salt = GenerateSalt()
+			newUser.Salt = GenerateSalt(node)
 			newUser.Password = GeneratePassword(plaintextPassword, newUser.Salt)
 		}
 		newUser.Name = name
@@ -54,7 +54,7 @@ func CreateUser(id, name, plaintextPassword, role string) (*meta.User, error) {
 			UpdatedAt: time.Now(),
 		}
 
-		newUser.Salt = GenerateSalt()
+		newUser.Salt = GenerateSalt(node)
 		newUser.Password = GeneratePassword(plaintextPassword, newUser.Salt)
 	}
 
@@ -92,8 +92,8 @@ func GeneratePassword(password, salt string) string {
 	return val
 }
 
-func GenerateSalt() string {
-	return ider.Generate()
+func GenerateSalt(node *ider.Node) string {
+	return node.Generate()
 }
 
 type Argon2Params struct {

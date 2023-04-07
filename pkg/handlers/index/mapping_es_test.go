@@ -13,10 +13,11 @@ import (
 )
 
 func TestESMapping_GetConverted(t *testing.T) {
-	config.Global.EnableTextKeywordMapping = true
+	cfg := config.NewGlobalConfig()
+	cfg.EnableTextKeywordMapping = true
 
 	t.Run("create index", func(t *testing.T) {
-		index, err := core.NewIndex("TestEsMapping.index_1", "disk", 2)
+		index, err := core.NewIndex("TestEsMapping.index_1", "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -159,9 +160,9 @@ func TestESMapping_GetConverted(t *testing.T) {
 
 	t.Run("delete index", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
-			_ = core.DeleteIndex(fmt.Sprintf("TestEsMapping.index_%d", i))
+			_ = core.DeleteIndex(fmt.Sprintf("TestEsMapping.index_%d", i), cfg.DataPath)
 		}
 	})
 
-	config.Global.EnableTextKeywordMapping = false
+	cfg.EnableTextKeywordMapping = false
 }

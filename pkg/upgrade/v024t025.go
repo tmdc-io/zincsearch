@@ -19,7 +19,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/zutils"
 )
@@ -29,9 +28,9 @@ import (
 // -- mv    index index_old
 // -- mkdir index
 // -- mv    index_old index/000000
-func UpgradeFromV024T025(index *meta.Index) error {
+func UpgradeFromV024T025(index *meta.Index, dataPath string) error {
 	indexName := index.Name
-	rootPath := config.Global.DataPath
+	rootPath := dataPath
 	if ok, _ := zutils.IsExist(path.Join(rootPath, indexName)); !ok {
 		return nil // if index does not exist, skip
 	}

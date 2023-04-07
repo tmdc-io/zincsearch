@@ -16,6 +16,7 @@
 package document
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -66,8 +67,8 @@ func Update(c *gin.Context) {
 		zutils.GinRenderJSON(c, http.StatusInternalServerError, meta.HTTPResponseError{Error: err.Error()})
 		return
 	}
-
-	err = index.UpdateDocument(docID, doc, insertBool)
+	cfg := config.GetConfig(c)
+	err = index.UpdateDocument(docID, doc, insertBool, cfg.Shard.GoroutineNum, cfg.EnableTextKeywordMapping)
 	if err != nil {
 		zutils.GinRenderJSON(c, http.StatusInternalServerError, meta.HTTPResponseError{Error: err.Error()})
 		return

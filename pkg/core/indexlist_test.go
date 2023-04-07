@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -27,8 +28,8 @@ func TestIndexList_List(t *testing.T) {
 	assert.NoError(t, err)
 	assert.False(t, exist)
 	assert.NotNil(t, index)
-
-	rs, err := index.GetReaders(0, 0)
+	cfg := config.NewGlobalConfig()
+	rs, err := index.GetReaders(0, 0, cfg.Shard.GoroutineNum)
 	assert.NoError(t, err)
 	assert.NotNil(t, rs)
 
@@ -41,7 +42,7 @@ func TestIndexList_List(t *testing.T) {
 	got3 := ZINC_INDEX_LIST.ListStat()
 	assert.NotNil(t, got3)
 
-	err = DeleteIndex(indexName)
+	err = DeleteIndex(indexName, cfg.DataPath)
 	assert.NoError(t, err)
 
 	err = ZINC_INDEX_LIST.GC()

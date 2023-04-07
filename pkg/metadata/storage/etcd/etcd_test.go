@@ -16,21 +16,12 @@
 package etcd
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/zinclabs/zincsearch/pkg/config"
 )
-
-func TestMain(m *testing.M) {
-	if config.Global.Etcd.Endpoints == nil {
-		os.Exit(0)
-		return
-	}
-	os.Exit(m.Run())
-}
 
 func Test_etcdStorage_List(t *testing.T) {
 	type args struct {
@@ -61,8 +52,8 @@ func Test_etcdStorage_List(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
-	store := New("/zincsearch/test")
+	cfg := config.NewGlobalConfig()
+	store := New("/zincsearch/test", cfg.Etcd)
 	defer store.Close()
 	t.Run("prepare", func(t *testing.T) {
 		err := store.Set("/test/foo", []byte("bar"))
@@ -108,8 +99,8 @@ func Test_etcdStorage_Get(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
-	store := New("/zincsearch/test")
+	cfg := config.NewGlobalConfig()
+	store := New("/zincsearch/test", cfg.Etcd)
 	defer store.Close()
 	t.Run("prepare", func(t *testing.T) {
 		err := store.Set("/test/foo", []byte("bar"))
@@ -155,8 +146,8 @@ func Test_etcdStorage_Set(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
-	store := New("/zincsearch/test")
+	cfg := config.NewGlobalConfig()
+	store := New("/zincsearch/test", cfg.Etcd)
 	defer store.Close()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -192,8 +183,8 @@ func Test_etcdStorage_Delete(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
-	store := New("/zincsearch/test")
+	cfg := config.NewGlobalConfig()
+	store := New("/zincsearch/test", cfg.Etcd)
 	defer store.Close()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

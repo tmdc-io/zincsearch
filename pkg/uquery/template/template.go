@@ -25,7 +25,7 @@ import (
 	"github.com/zinclabs/zincsearch/pkg/uquery/index"
 )
 
-func Request(data map[string]interface{}) (*meta.IndexTemplate, error) {
+func Request(data map[string]interface{}, enableTextKeywordMapping bool) (*meta.IndexTemplate, error) {
 	if data == nil {
 		return nil, nil
 	}
@@ -65,7 +65,7 @@ func Request(data map[string]interface{}) (*meta.IndexTemplate, error) {
 				// compatible {"priority":150,"template":"filebeat-7.16.3-*"}
 				template.IndexPatterns = append(template.IndexPatterns, v)
 			case map[string]interface{}:
-				tmpIndex, err := index.Request(v)
+				tmpIndex, err := index.Request(v, enableTextKeywordMapping)
 				if err != nil {
 					return nil, err
 				}

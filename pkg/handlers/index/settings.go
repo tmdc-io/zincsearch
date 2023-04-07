@@ -88,8 +88,8 @@ func SetSettings(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, meta.HTTPResponseError{Error: err.Error()})
 		return
 	}
-
-	shardsNum := config.Global.Shard.Num
+	cfg := config.GetConfig(c)
+	shardsNum := cfg.Shard.Num
 	if settings.NumberOfShards != 0 {
 		shardsNum = settings.NumberOfShards
 	}

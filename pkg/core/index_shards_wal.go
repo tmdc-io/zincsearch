@@ -24,7 +24,6 @@ import (
 	blugeindex "github.com/blugelabs/bluge/index"
 	"github.com/rs/zerolog/log"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/errors"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/wal"
@@ -50,7 +49,7 @@ func (s *IndexShard) OpenWAL() error {
 	}
 	// do open wal
 	var err error
-	if s.wal, err = wal.Open(s.GetShardName()); err != nil {
+	if s.wal, err = wal.Open(s.GetShardName(), s.dataPath, s.walRedoLogNoSync); err != nil {
 		s.lock.Unlock()
 		return err
 	}
@@ -183,7 +182,7 @@ func (s *IndexShard) ConsumeWAL() bool {
 			return false
 		}
 		docs.AddDocument(doc)
-		if docs.MaxShardLen() >= config.Global.BatchSize {
+		if docs.MaxShardLen() >= s.batchSize {
 			if err = s.writeRedoLog(RedoActionRead, startID, minID); err != nil {
 				log.Error().Err(err).Str("index", s.GetIndexName()).Str("shard", s.GetID()).Str("stage", "read").Msg("consume wal.redolog.Write()")
 				return false
@@ -227,7 +226,7 @@ func (s *IndexShard) ConsumeWAL() bool {
 	}
 
 	// check shards
-	if err = s.CheckShards(); err != nil {
+	if err = s.CheckShards(s.maxSize); err != nil {
 		log.Error().Err(err).Str("index", s.GetIndexName()).Str("shard", s.GetID()).Msg("consume index.CheckShards()")
 		return true
 	}

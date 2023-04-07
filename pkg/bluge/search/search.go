@@ -36,6 +36,7 @@ func MultiSearch(
 	query *meta.ZincQuery,
 	mappings *meta.Mappings,
 	analyzers map[string]*analysis.Analyzer,
+	cfg *config.Config,
 	readers ...*bluge.Reader,
 ) (search.DocumentMatchIterator, error) {
 	if len(readers) == 0 {
@@ -48,7 +49,7 @@ func MultiSearch(
 		}, nil
 	}
 	if len(readers) == 1 {
-		req, err := uquery.ParseQueryDSL(query, mappings, analyzers)
+		req, err := uquery.ParseQueryDSL(query, mappings, analyzers, cfg.MaxResults, cfg.AggregationTermsSize)
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +60,7 @@ func MultiSearch(
 	bucketAggs["duration"] = aggregations.Duration()
 
 	eg := &errgroup.Group{}
-	eg.SetLimit(config.Global.Shard.GorutineNum)
+	eg.SetLimit(cfg.Shard.GoroutineNum)
 	docs := make(chan *search.DocumentMatch, len(readers)*10)
 	aggs := make(chan *search.Bucket, len(readers))
 
@@ -90,7 +91,7 @@ func MultiSearch(
 
 	for _, r := range readers {
 		r := r
-		req, err := uquery.ParseQueryDSL(query, mappings, analyzers)
+		req, err := uquery.ParseQueryDSL(query, mappings, analyzers, cfg.MaxResults, cfg.AggregationTermsSize)
 		if err != nil {
 			return nil, err
 		}

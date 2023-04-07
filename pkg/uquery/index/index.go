@@ -27,7 +27,7 @@ import (
 	"github.com/zinclabs/zincsearch/pkg/zutils/json"
 )
 
-func Request(data map[string]interface{}) (*meta.Index, error) {
+func Request(data map[string]interface{}, enableTextKeywordMapping bool) (*meta.Index, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
@@ -61,7 +61,7 @@ func Request(data map[string]interface{}) (*meta.Index, error) {
 		if !ok {
 			return nil, errors.New(errors.ErrorTypeParsingException, "[index] mappings should be an object")
 		}
-		mappings, err := mappings.Request(analyzers, v)
+		mappings, err := mappings.Request(analyzers, v, enableTextKeywordMapping)
 		if err != nil {
 			return nil, err
 		}

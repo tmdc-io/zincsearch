@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"math/rand"
 	"strconv"
 	"testing"
@@ -244,8 +245,9 @@ func TestIndex_Search(t *testing.T) {
 	var err error
 	var index *Index
 	indexName := "Search.v2.index_1"
+	cfg := config.NewGlobalConfig()
 	t.Run("Prepare", func(t *testing.T) {
-		index, err = NewIndex(indexName, "disk", 2)
+		index, err = NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 		err = StoreIndex(index)
@@ -261,7 +263,7 @@ func TestIndex_Search(t *testing.T) {
 		for _, d := range prepareData {
 			rand.Seed(time.Now().UnixNano())
 			docId := rand.Intn(1000)
-			err := index.CreateDocument(strconv.Itoa(docId), d, false)
+			err := index.CreateDocument(strconv.Itoa(docId), d, false, cfg.EnableTextKeywordMapping)
 			assert.NoError(t, err)
 		}
 
@@ -271,7 +273,7 @@ func TestIndex_Search(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := index.Search(tt.args.iQuery)
+			got, err := index.Search(tt.args.iQuery, cfg)
 			assert.NoError(t, err)
 			assert.GreaterOrEqual(t, got.Hits.Total.Value, 1)
 			if tt.wantNum > 0 {
@@ -282,7 +284,7 @@ func TestIndex_Search(t *testing.T) {
 	}
 
 	t.Run("Cleanup", func(t *testing.T) {
-		err = DeleteIndex(indexName)
+		err = DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

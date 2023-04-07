@@ -17,6 +17,8 @@ package benchmark
 
 import (
 	"fmt"
+	"github.com/zinclabs/zincsearch/pkg/config"
+	"github.com/zinclabs/zincsearch/pkg/ider"
 	"os"
 	"testing"
 
@@ -36,8 +38,10 @@ func BenchmarkBulk(b *testing.B) {
 	target := "olympics"
 
 	b.ResetTimer()
+	cfg := config.NewEnvFileGlobalConfig([]string{"../../.env"})
+	node := ider.LocalNode()
 	for i := 0; i < b.N; i++ {
-		_, err = document.BulkWorker(target, f)
+		_, err = document.BulkWorker(target, f, cfg.MaxDocumentSize, cfg.EnableTextKeywordMapping, cfg.Shard.GoroutineNum, node)
 		if err != nil {
 			b.Error(err)
 		}

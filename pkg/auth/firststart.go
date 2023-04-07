@@ -17,19 +17,21 @@ package auth
 
 import (
 	"errors"
-	"os"
-
 	"github.com/rs/zerolog/log"
+	"github.com/zinclabs/zincsearch/pkg/ider"
+	"os"
 )
 
-func init() {
+// func init() {
+func FirstStart(node *ider.Node) {
 	// init first start
 	firstStart, err := isFirstStart()
 	if err != nil {
 		log.Print(err)
 	}
 	if firstStart {
-		if err := initFirstUser(); err != nil {
+		node := ider.LocalNode()
+		if err := initFirstUser(node); err != nil {
 			log.Fatal().Err(err).Msg("init first user")
 		}
 	}
@@ -68,15 +70,14 @@ func initPermissionCache() error {
 	return nil
 }
 
-func initFirstUser() error {
+func initFirstUser(node *ider.Node) error {
 	// create default user from environment variable
 	adminUser := os.Getenv("ZINC_FIRST_ADMIN_USER")
 	adminPassword := os.Getenv("ZINC_FIRST_ADMIN_PASSWORD")
 	if adminUser == "" || adminPassword == "" {
 		return errors.New("ZINC_FIRST_ADMIN_USER and ZINC_FIRST_ADMIN_PASSWORD must be set on first start. You should also change the credentials after first login")
 	}
-
-	_, err := CreateUser(adminUser, adminUser, adminPassword, "admin")
+	_, err := CreateUser(adminUser, adminUser, adminPassword, "admin", node)
 
 	return err
 }

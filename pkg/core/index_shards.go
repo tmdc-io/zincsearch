@@ -27,7 +27,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/errors"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/uquery/source"
@@ -47,14 +46,18 @@ const (
 // then we will can not found the old document, maybe cause duplicate documents.
 // First layer shard just used for distribute not really store documents.
 type IndexShard struct {
-	open   uint64
-	name   string // shard name: index/shardID
-	root   *Index
-	ref    *meta.IndexShard
-	shards []*IndexSecondShard
-	wal    *wal.Log
-	lock   sync.RWMutex
-	close  chan struct{}
+	open             uint64
+	name             string // shard name: index/shardID
+	root             *Index
+	ref              *meta.IndexShard
+	shards           []*IndexSecondShard
+	wal              *wal.Log
+	lock             sync.RWMutex
+	close            chan struct{}
+	dataPath         string
+	walRedoLogNoSync bool
+	batchSize        int
+	maxSize          uint64
 }
 
 // IndexSecondShard second layer shard by auto increate shards for index.
@@ -79,9 +82,9 @@ func (index *Index) GetShardByDocID(docID string) *IndexShard {
 }
 
 // CheckShards check all shards status if need create new second layer shard
-func (index *Index) CheckShards() error {
+func (index *Index) CheckShards(maxSize uint64) error {
 	for _, shard := range index.shards {
-		if err := shard.CheckShards(); err != nil {
+		if err := shard.CheckShards(maxSize); err != nil {
 			return err
 		}
 	}
@@ -89,13 +92,13 @@ func (index *Index) CheckShards() error {
 }
 
 // CheckShards check current shard is reach the maximum shard size or create a new shard
-func (s *IndexShard) CheckShards() error {
+func (s *IndexShard) CheckShards(maxSize uint64) error {
 	w, err := s.GetWriter()
 	if err != nil {
 		return err
 	}
 	_, size := w.DirectoryStats()
-	if size > config.Global.Shard.MaxSize {
+	if size > maxSize {
 		return s.NewShard()
 	}
 	return nil
@@ -201,11 +204,11 @@ func (s *IndexShard) GetWriters() ([]*bluge.Writer, error) {
 }
 
 // GetReaders return all shard readers
-func (s *IndexShard) GetReaders(timeMin, timeMax int64) ([]*bluge.Reader, error) {
+func (s *IndexShard) GetReaders(timeMin, timeMax int64, goroutineNum int) ([]*bluge.Reader, error) {
 	rs := make([]*bluge.Reader, 0, 1)
 	chs := make(chan *bluge.Reader, s.GetShardNum())
 	eg := errgroup.Group{}
-	eg.SetLimit(config.Global.Shard.GorutineNum)
+	eg.SetLimit(goroutineNum)
 	for i := s.GetLatestShardID(); i >= 0; i-- {
 		i := i
 		s.lock.RLock()
@@ -259,7 +262,7 @@ func (s *IndexShard) openWriter(shardID int64) error {
 	}
 	var err error
 	indexName := fmt.Sprintf("%s/%s/%06x", s.GetIndexName(), s.GetID(), shardID)
-	secondShard.writer, err = OpenIndexWriter(indexName, s.root.GetStorageType(), defaultSearchAnalyzer, 0, 0)
+	secondShard.writer, err = OpenIndexWriter(indexName, s.root.GetStorageType(), defaultSearchAnalyzer, s.dataPath, 0, 0)
 	return err
 }
 
@@ -307,7 +310,7 @@ func (s *IndexShard) SetTimestamp(t int64) {
 }
 
 // FindShardByDocID finds docID in which shard and returns the shard id
-func (s *IndexShard) FindShardByDocID(docID string) (int64, error) {
+func (s *IndexShard) FindShardByDocID(docID string, goroutineNum int) (int64, error) {
 	query := bluge.NewBooleanQuery()
 	query.AddMust(bluge.NewTermQuery(docID).SetField("_id"))
 	request := bluge.NewTopNSearch(1, query).WithStandardAggregations()
@@ -321,7 +324,7 @@ func (s *IndexShard) FindShardByDocID(docID string) (int64, error) {
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
-	eg.SetLimit(config.Global.Shard.GorutineNum)
+	eg.SetLimit(goroutineNum)
 	for id := int64(len(writers)) - 1; id >= 0; id-- {
 		id := id
 		w := writers[id]
@@ -360,7 +363,7 @@ func (s *IndexShard) FindShardByDocID(docID string) (int64, error) {
 }
 
 // FindDocumentByDocID finds docID and returns the document
-func (s *IndexShard) FindDocumentByDocID(docID string) (*meta.Hit, error) {
+func (s *IndexShard) FindDocumentByDocID(docID string, goroutineNum int) (*meta.Hit, error) {
 	query := bluge.NewBooleanQuery()
 	query.AddMust(bluge.NewTermQuery(docID).SetField("_id"))
 	request := bluge.NewTopNSearch(1, query).WithStandardAggregations()
@@ -374,7 +377,7 @@ func (s *IndexShard) FindDocumentByDocID(docID string) (*meta.Hit, error) {
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
-	eg.SetLimit(config.Global.Shard.GorutineNum)
+	eg.SetLimit(goroutineNum)
 	for id := int64(len(writers)) - 1; id >= 0; id-- {
 		id := id
 		w := writers[id]

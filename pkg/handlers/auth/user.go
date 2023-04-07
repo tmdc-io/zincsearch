@@ -16,6 +16,7 @@
 package auth
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/ider"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -48,7 +49,7 @@ func CreateUpdateUser(c *gin.Context) {
 		return
 	}
 
-	newUser, err := auth.CreateUser(user.ID, user.Name, user.Password, user.Role)
+	newUser, err := auth.CreateUser(user.ID, user.Name, user.Password, user.Role, ider.GetNode(c))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, meta.HTTPResponseError{Error: err.Error()})
 		return

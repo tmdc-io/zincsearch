@@ -16,6 +16,7 @@
 package upgrade
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"strings"
 
 	"github.com/rs/zerolog/log"
@@ -23,22 +24,22 @@ import (
 	"github.com/zinclabs/zincsearch/pkg/meta"
 )
 
-func Do(oldVersion string, index *meta.Index) error {
+func Do(oldVersion string, index *meta.Index, cfg *config.Config) error {
 	var err error
 	log.Info().Msgf("Begin upgrade[%s] from version[%s]", index.Name, oldVersion)
 	switch strings.TrimPrefix(oldVersion, "v") {
 	case "0.2.4":
-		if err = UpgradeFromV024T025(index); err != nil {
+		if err = UpgradeFromV024T025(index, cfg.DataPath); err != nil {
 			return err
 		}
-		return Do("0.2.5", index)
+		return Do("0.2.5", index, cfg)
 	case "0.2.5":
 		if err = UpgradeFromV025T026(index); err != nil {
 			return err
 		}
-		return Do("0.2.6", index)
+		return Do("0.2.6", index, cfg)
 	case "0.2.6":
-		if err = UpgradeFromV026T027(index); err != nil {
+		if err = UpgradeFromV026T027(index, cfg.DataPath, cfg.Shard.Num); err != nil {
 			return err
 		}
 		return nil

@@ -25,13 +25,17 @@ import (
 	"github.com/blugelabs/bluge/search/aggregations"
 
 	zincaggregation "github.com/zinclabs/zincsearch/pkg/bluge/aggregation"
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/errors"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/zutils"
 )
 
-func Request(req zincaggregation.SearchAggregation, aggs map[string]meta.Aggregations, mappings *meta.Mappings) error {
+func Request(
+	req zincaggregation.SearchAggregation,
+	aggs map[string]meta.Aggregations,
+	mappings *meta.Mappings,
+	aggregationTermsSize int,
+) error {
 	if len(aggs) == 0 {
 		return nil // not need aggregation
 	}
@@ -59,7 +63,7 @@ func Request(req zincaggregation.SearchAggregation, aggs map[string]meta.Aggrega
 			req.AddAggregation(name, aggregations.Cardinality(search.Field(agg.Cardinality.Field)))
 		case agg.Terms != nil:
 			if agg.Terms.Size == 0 {
-				agg.Terms.Size = config.Global.AggregationTermsSize
+				agg.Terms.Size = aggregationTermsSize
 			}
 			var subreq *zincaggregation.TermsAggregation
 			prop, _ := mappings.GetProperty(agg.Terms.Field)
@@ -77,7 +81,7 @@ func Request(req zincaggregation.SearchAggregation, aggs map[string]meta.Aggrega
 				)
 			}
 			if len(agg.Aggregations) > 0 {
-				if err := Request(subreq, agg.Aggregations, mappings); err != nil {
+				if err := Request(subreq, agg.Aggregations, mappings, aggregationTermsSize); err != nil {
 					return err
 				}
 			}
@@ -146,7 +150,7 @@ func Request(req zincaggregation.SearchAggregation, aggs map[string]meta.Aggrega
 			}
 		case agg.Histogram != nil:
 			if agg.Histogram.Size == 0 {
-				agg.Histogram.Size = config.Global.AggregationTermsSize
+				agg.Histogram.Size = aggregationTermsSize
 			}
 			if agg.Histogram.Interval <= 0 {
 				return errors.New(errors.ErrorTypeParsingException, "[histogram] aggregation interval must be a positive decimal")
@@ -174,14 +178,14 @@ func Request(req zincaggregation.SearchAggregation, aggs map[string]meta.Aggrega
 				)
 			}
 			if len(agg.Aggregations) > 0 {
-				if err := Request(subreq, agg.Aggregations, mappings); err != nil {
+				if err := Request(subreq, agg.Aggregations, mappings, aggregationTermsSize); err != nil {
 					return err
 				}
 			}
 			req.AddAggregation(name, subreq)
 		case agg.DateHistogram != nil:
 			if agg.DateHistogram.Size == 0 {
-				agg.DateHistogram.Size = config.Global.AggregationTermsSize
+				agg.DateHistogram.Size = aggregationTermsSize
 			}
 			if agg.DateHistogram.Interval != "" {
 				agg.DateHistogram.FixedInterval = agg.DateHistogram.Interval
@@ -259,7 +263,7 @@ func Request(req zincaggregation.SearchAggregation, aggs map[string]meta.Aggrega
 				)
 			}
 			if len(agg.Aggregations) > 0 {
-				if err := Request(subreq, agg.Aggregations, mappings); err != nil {
+				if err := Request(subreq, agg.Aggregations, mappings, aggregationTermsSize); err != nil {
 					return err
 				}
 			}
@@ -303,6 +307,7 @@ func Request(req zincaggregation.SearchAggregation, aggs map[string]meta.Aggrega
 					agg.AutoDateHistogram.MinimumInterval,
 					agg.AutoDateHistogram.Format,
 					timeZone,
+					aggregationTermsSize,
 				)
 			default:
 				return errors.New(
@@ -315,7 +320,7 @@ func Request(req zincaggregation.SearchAggregation, aggs map[string]meta.Aggrega
 				)
 			}
 			if len(agg.Aggregations) > 0 {
-				if err := Request(subreq, agg.Aggregations, mappings); err != nil {
+				if err := Request(subreq, agg.Aggregations, mappings, aggregationTermsSize); err != nil {
 					return err
 				}
 			}

@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/gin-gonic/gin"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -27,42 +28,57 @@ import (
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/errors"
 	"github.com/zinclabs/zincsearch/pkg/ider"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/metadata"
 )
 
-// Telemetry instance
-var Telemetry = newTelemetry()
+const (
+	GlobalTelemetryContextKey string = "zincsearch-telemetry"
+)
 
-type telemetry struct {
+func GetTelemetry(c *gin.Context) *Telemetry {
+	t := c.MustGet(GlobalTelemetryContextKey).(*Telemetry)
+	return t
+}
+
+func InjectTelemetry(t *Telemetry) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(GlobalTelemetryContextKey, t)
+		c.Next()
+	}
+}
+
+type Telemetry struct {
 	instanceID   string
 	events       chan analytics.Track
 	baseInfo     map[string]interface{}
 	baseInfoOnce sync.Once
+	enabled      bool
+	node         *ider.Node
 }
 
-func newTelemetry() *telemetry {
-	t := new(telemetry)
+func NewTelemetry(enable bool, node *ider.Node) *Telemetry {
+	t := new(Telemetry)
+	t.node = node
 	t.events = make(chan analytics.Track, 100)
 	t.initBaseInfo()
 
-	if config.Global.TelemetryEnable {
+	if enable {
 		go t.runEvents()
 	}
 
 	return t
 }
 
-func (t *telemetry) createInstanceID() string {
-	instanceID := ider.Generate()
+func (t *Telemetry) createInstanceID() string {
+	instanceID := t.node.Generate()
 	_ = metadata.KV.Set("instance_id", []byte(instanceID))
 	return instanceID
 }
 
-func (t *telemetry) GetInstanceID() string {
+func (t *Telemetry) GetInstanceID() string {
 	if t.instanceID != "" {
 		return t.instanceID
 	}
@@ -82,7 +98,7 @@ func (t *telemetry) GetInstanceID() string {
 	return t.instanceID
 }
 
-func (t *telemetry) initBaseInfo() {
+func (t *Telemetry) initBaseInfo() {
 	t.baseInfoOnce.Do(func() {
 		m, _ := mem.VirtualMemory()
 		cpuCount, _ := cpu.Counts(true)
@@ -99,8 +115,8 @@ func (t *telemetry) initBaseInfo() {
 	})
 }
 
-func (t *telemetry) Instance() {
-	if !config.Global.TelemetryEnable {
+func (t *Telemetry) Instance() {
+	if !t.enabled {
 		return
 	}
 
@@ -118,8 +134,8 @@ func (t *telemetry) Instance() {
 	})
 }
 
-func (t *telemetry) Event(event string, data map[string]interface{}) {
-	if !config.Global.TelemetryEnable {
+func (t *Telemetry) Event(event string, data map[string]interface{}) {
+	if !t.enabled {
 		return
 	}
 
@@ -138,13 +154,13 @@ func (t *telemetry) Event(event string, data map[string]interface{}) {
 	}
 }
 
-func (t *telemetry) runEvents() {
+func (t *Telemetry) runEvents() {
 	for event := range t.events {
 		_ = meta.SEGMENT_CLIENT.Enqueue(event)
 	}
 }
 
-func (t *telemetry) TotalIndexSize() uint64 {
+func (t *Telemetry) TotalIndexSize() uint64 {
 	TotalIndexSize := uint64(0)
 	for _, idx := range ZINC_INDEX_LIST.List() {
 		TotalIndexSize += t.GetIndexSize(idx.GetName())
@@ -152,14 +168,14 @@ func (t *telemetry) TotalIndexSize() uint64 {
 	return TotalIndexSize
 }
 
-func (t *telemetry) GetIndexSize(indexName string) uint64 {
+func (t *Telemetry) GetIndexSize(indexName string) uint64 {
 	if index, ok := ZINC_INDEX_LIST.Get(indexName); ok {
 		return atomic.LoadUint64(&index.ref.Stats.StorageSize) / 1024 / 1024 // convert to MB
 	}
 	return 0
 }
 
-func (t *telemetry) HeartBeat() {
+func (t *Telemetry) HeartBeat() {
 	m, err := mem.VirtualMemory()
 	if err != nil {
 		log.Error().Err(err).Msg("core.Telemetry.HeartBeat: error getting memory info")
@@ -172,8 +188,8 @@ func (t *telemetry) HeartBeat() {
 	t.Event("heartbeat", data)
 }
 
-func (t *telemetry) Cron() {
-	if !config.Global.TelemetryEnable {
+func (t *Telemetry) Cron() {
+	if !t.enabled {
 		return
 	}
 

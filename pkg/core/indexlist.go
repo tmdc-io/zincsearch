@@ -16,13 +16,13 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"sort"
 	"sync"
 
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/meta"
 	"github.com/zinclabs/zincsearch/pkg/metadata"
 )
@@ -32,9 +32,10 @@ var ZINC_INDEX_LIST IndexList
 type IndexList struct {
 	Indexes map[string]*Index
 	lock    sync.RWMutex
+	cfg     *config.Config
 }
 
-func init() {
+func NewIndexList(cfg *config.Config) {
 	// check version
 	version, _ := metadata.KV.Get("version")
 	if version == nil {
@@ -43,9 +44,11 @@ func init() {
 		version = []byte("v0.2.4")
 	}
 
+	ZINC_INDEX_LIST.cfg = cfg
+
 	// start loading index
 	ZINC_INDEX_LIST.Indexes = make(map[string]*Index)
-	err := LoadZincIndexesFromMetadata(string(version))
+	err := LoadZincIndexesFromMetadata(string(version), cfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error loading index")
 	}
@@ -92,7 +95,7 @@ func (t *IndexList) GetOrCreate(name, storageType string, shardNum int64) (*Inde
 		return idx, true, nil
 	}
 	// okay, let's create new index
-	idx, err := NewIndex(name, storageType, shardNum)
+	idx, err := NewIndex(name, storageType, shardNum, t.cfg)
 	if err != nil {
 		return nil, false, err
 	}
@@ -167,7 +170,7 @@ func (t *IndexList) Close() error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 	eg := errgroup.Group{}
-	eg.SetLimit(config.Global.Shard.GorutineNum)
+	eg.SetLimit(t.cfg.Shard.GoroutineNum)
 	for _, index := range t.Indexes {
 		index := index
 		eg.Go(func() error {

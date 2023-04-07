@@ -16,6 +16,7 @@
 package document
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"testing"
 	"time"
@@ -34,6 +35,10 @@ func TestUpdate(t *testing.T) {
 		params  map[string]string
 		result  string
 	}
+	cfg := config.NewGlobalConfig()
+	//metadata.NewStorager(cfg)
+	//core.NewIndexList(cfg)
+	//core.NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
 	tests := []struct {
 		name string
 		args args
@@ -120,7 +125,7 @@ func TestUpdate(t *testing.T) {
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := core.DeleteIndex("TestDocumentUpdate.index_1")
+		err := core.DeleteIndex("TestDocumentUpdate.index_1", cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

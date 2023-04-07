@@ -30,7 +30,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type config struct {
+const (
+	GlobalConfigContextKey string = "zincsearch-global-config"
+)
+
+type Config struct {
 	GinMode                   string        `env:"GIN_MODE"`
 	ServerPort                string        `env:"ZINC_SERVER_PORT,default=4080"`
 	ServerAddress             string        `env:"ZINC_SERVER_ADDRESS"`
@@ -58,8 +62,20 @@ type config struct {
 	WalRedoLogNoSync          bool          `env:"ZINC_WAL_REDOLOG_NO_SYNC,default=false"` // control sync after every write
 	Cluster                   cluster
 	Shard                     shard
-	Etcd                      etcd
+	Etcd                      Etcd
 	Plugin                    plugin
+}
+
+func GetConfig(c *gin.Context) *Config {
+	cfg := c.MustGet(GlobalConfigContextKey).(*Config)
+	return cfg
+}
+
+func InjectConfig(cfg *Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(GlobalConfigContextKey, cfg)
+		c.Next()
+	}
 }
 
 type cluster struct {
@@ -67,15 +83,15 @@ type cluster struct {
 }
 
 type shard struct {
-	// control gorutine number for read
-	GorutineNum int `env:"ZINC_SHARD_GORUTINE_NUM,default=3"`
+	// control goroutine number for read
+	GoroutineNum int `env:"ZINC_SHARD_GORUTINE_NUM,default=3"`
 	// DefaultNum is the default number of shards.
 	Num int64 `env:"ZINC_SHARD_NUM,default=3"`
 	// MaxSize is the maximum size limit for one shard, or will create a new shard.
 	MaxSize uint64 `env:"ZINC_SHARD_MAX_SIZE,default=1073741824"`
 }
 
-type etcd struct {
+type Etcd struct {
 	Endpoints []string `env:"ZINC_ETCD_ENDPOINTS"`
 	Prefix    string   `env:"ZINC_ETCD_PREFIX,default=/zinc"`
 	Username  string   `env:"ZINC_ETCD_USERNAME"`
@@ -97,22 +113,22 @@ type gse struct {
 	DictPath  string `env:"ZINC_PLUGIN_GSE_DICT_PATH,default=./plugins/gse/dict"`
 }
 
-var Global = new(config)
-
-func init() {
+func NewGlobalConfig() *Config {
 	err := godotenv.Load()
 	if err != nil {
 		log.Print(err.Error())
 	}
-	loadConfig(reflect.ValueOf(Global).Elem())
+	c := new(Config)
+
+	loadConfig(reflect.ValueOf(c).Elem())
 
 	// configure gin
-	if Global.GinMode == "release" {
+	if c.GinMode == "release" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	// check data path
-	testPath := path.Join(Global.DataPath, "_test_")
+	testPath := path.Join(c.DataPath, "_test_")
 	if err := os.MkdirAll(testPath, 0755); err != nil {
 		log.Fatal().Err(err).Msg("ZINC_DATA_PATH is not writable")
 	}
@@ -121,7 +137,7 @@ func init() {
 	}
 
 	// configure ice compress algorithm
-	switch strings.ToUpper(Global.IceCompressor) {
+	switch strings.ToUpper(c.IceCompressor) {
 	case "SNAPPY":
 		compress.Algorithm = compress.SNAPPY
 	case "S2":
@@ -129,6 +145,14 @@ func init() {
 	case "ZSTD":
 		compress.Algorithm = compress.ZSTD
 	}
+	return c
+}
+
+func NewEnvFileGlobalConfig(envPaths []string) *Config {
+	if err := godotenv.Load(envPaths...); err != nil {
+		log.Print(err.Error())
+	}
+	return NewGlobalConfig()
 }
 
 func loadConfig(rv reflect.Value) {

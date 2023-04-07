@@ -19,13 +19,12 @@ import (
 	"github.com/gin-gonic/gin"
 	ginprometheus "github.com/zinclabs/go-gin-prometheus"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/core"
 )
 
 // SetPrometheus sets up prometheus metrics for gin
-func SetPrometheus(app *gin.Engine) {
-	if !config.Global.PrometheusEnable {
+func SetPrometheus(app *gin.Engine, enabled bool) {
+	if !enabled {
 		return
 	}
 

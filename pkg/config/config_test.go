@@ -34,7 +34,7 @@ func TestConfig(t *testing.T) {
 	})
 
 	t.Run("check", func(t *testing.T) {
-		c := new(config)
+		c := NewGlobalConfig()
 		loadConfig(reflect.ValueOf(c).Elem())
 
 		assert.Equal(t, "", c.GinMode)
@@ -106,7 +106,7 @@ func TestConfig(t *testing.T) {
 		for _, v := range tests {
 			os.Setenv("ZINC_MAX_DOCUMENT_SIZE", v.value)
 
-			c := new(config)
+			c := NewGlobalConfig()
 			loadConfig(reflect.ValueOf(c).Elem())
 			assert.Equal(t, c.MaxDocumentSize, v.expect)
 		}
@@ -135,7 +135,7 @@ func TestConfig(t *testing.T) {
 		for _, v := range dt {
 			os.Setenv("ZINC_WAL_SYNC_INTERVAL", v.value)
 
-			c := new(config)
+			c := NewGlobalConfig()
 			loadConfig(reflect.ValueOf(c).Elem())
 			assert.Equal(t, c.WalSyncInterval, v.expect)
 		}
@@ -152,7 +152,7 @@ func TestSentryDSNOverride(t *testing.T) {
 	})
 
 	t.Run("check", func(t *testing.T) {
-		c := new(config)
+		c := NewGlobalConfig()
 		loadConfig(reflect.ValueOf(c).Elem())
 
 		assert.Equal(t, customDSN, c.SentryDSN)

@@ -22,7 +22,6 @@ import (
 	"github.com/dgraph-io/badger/v3/options"
 	"github.com/rs/zerolog/log"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/errors"
 	"github.com/zinclabs/zincsearch/pkg/metadata/storage"
 )
@@ -31,8 +30,8 @@ type badgerStorage struct {
 	db *badger.DB
 }
 
-func New(dbpath string) storage.Storager {
-	db, err := openBadgerDB(path.Join(config.Global.DataPath, dbpath), false)
+func New(dbpath, dataPath string) storage.Storager {
+	db, err := openBadgerDB(path.Join(dataPath, dbpath), false)
 	if err != nil {
 		log.Fatal().Err(err).Msg("open badger db for metadata failed")
 	}

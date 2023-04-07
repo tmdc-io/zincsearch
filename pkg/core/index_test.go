@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"reflect"
 	"testing"
 	"time"
@@ -30,8 +31,9 @@ import (
 )
 
 func TestIndex_Index(t *testing.T) {
+	cfg := config.NewGlobalConfig()
 	indexName := "TestIndex_Index.index_1"
-	index, err := NewIndex(indexName, "disk", 2)
+	index, err := NewIndex(indexName, "disk", 2, cfg)
 	assert.NoError(t, err)
 	assert.NotNil(t, index)
 
@@ -255,9 +257,9 @@ func TestIndex_BuildBlugeDocumentFromJSON(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
+	cfg := config.NewGlobalConfig()
 	t.Run("prepare", func(t *testing.T) {
-		index, err = NewIndex(indexName, "disk", 2)
+		index, err = NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -272,7 +274,7 @@ func TestIndex_BuildBlugeDocumentFromJSON(t *testing.T) {
 			shard := index.GetShardByDocID(tt.args.docID)
 			assert.NotNil(t, shard)
 
-			got, err := shard.CheckDocument(tt.args.docID, tt.args.doc, false, 0)
+			got, err := shard.CheckDocument(tt.args.docID, tt.args.doc, false, 0, cfg.EnableTextKeywordMapping)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -298,7 +300,7 @@ func TestIndex_BuildBlugeDocumentFromJSON(t *testing.T) {
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := DeleteIndex(indexName)
+		err := DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }
@@ -307,9 +309,9 @@ func TestIndex_Settings(t *testing.T) {
 	var index *Index
 	var err error
 	indexName := "TestIndex_Settings.index_1"
-
+	cfg := config.NewGlobalConfig()
 	t.Run("prepare", func(t *testing.T) {
-		index, err = NewIndex(indexName, "disk", 2)
+		index, err = NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -349,7 +351,7 @@ func TestIndex_Settings(t *testing.T) {
 	})
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := DeleteIndex(indexName)
+		err := DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

@@ -16,6 +16,7 @@
 package index
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"regexp"
 	"strings"
@@ -48,16 +49,17 @@ func Delete(c *gin.Context) {
 
 	indexList := core.ZINC_INDEX_LIST.List()
 
+	cfg := config.GetConfig(c)
 	for _, indexName := range strings.Split(indexNames, ",") {
 		if strings.Contains(indexName, "*") { // check for wildcard
-			err := deleteIndexWithWildcard(indexName, indexList)
+			err := deleteIndexWithWildcard(indexName, indexList, cfg.DataPath)
 			if err != nil {
 				c.JSON(http.StatusBadRequest, meta.HTTPResponseError{Error: err.Error()})
 				return
 			}
 			continue
 		}
-		if err := core.DeleteIndex(indexName); err != nil {
+		if err := core.DeleteIndex(indexName, cfg.DataPath); err != nil {
 			c.JSON(http.StatusBadRequest, meta.HTTPResponseError{Error: err.Error()})
 			return
 		}
@@ -68,7 +70,7 @@ func Delete(c *gin.Context) {
 	})
 }
 
-func deleteIndexWithWildcard(indexName string, indexList []*core.Index) error {
+func deleteIndexWithWildcard(indexName string, indexList []*core.Index, dataPath string) error {
 	parts := strings.Split(indexName, "*")
 	pattern := ""
 	for i, part := range parts {
@@ -85,7 +87,7 @@ func deleteIndexWithWildcard(indexName string, indexList []*core.Index) error {
 
 	for _, i := range indexList {
 		if p.MatchString(i.GetName()) {
-			if err := core.DeleteIndex(i.GetName()); err != nil {
+			if err := core.DeleteIndex(i.GetName(), dataPath); err != nil {
 				return err
 			}
 		}

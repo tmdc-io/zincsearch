@@ -30,15 +30,18 @@ var ErrorKeyNotExists = errors.New("key not exists")
 
 var db storage.Storager
 
-func init() {
-	if strings.ToLower(config.Global.ServerMode) == "cluster" {
-		db = etcd.New(config.Global.Etcd.Prefix + "/metadata")
+//var cfg = config.NewEnvFileGlobalConfig([]string{"../../.env"})
+
+func NewStorager(cfg *config.Config) {
+	//func init() {
+	if strings.ToLower(cfg.ServerMode) == "cluster" {
+		db = etcd.New(cfg.Etcd.Prefix+"/metadata", cfg.Etcd)
 	} else {
-		switch strings.ToLower(config.Global.MetadataStorage) {
+		switch strings.ToLower(cfg.MetadataStorage) {
 		case "badger":
-			db = badger.New("_metadata.db")
+			db = badger.New("_metadata.db", cfg.DataPath)
 		default:
-			db = bolt.New("_metadata.bolt")
+			db = bolt.New("_metadata.bolt", cfg.DataPath)
 		}
 	}
 }

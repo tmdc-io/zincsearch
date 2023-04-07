@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"testing"
 	"time"
 
@@ -47,12 +48,13 @@ func Test_walMergeDocs_WriteTo(t *testing.T) {
 	var shard *IndexShard
 	var err error
 	docs := make(walMergeDocs)
+	cfg := config.NewGlobalConfig()
 	t.Run("prepare", func(t *testing.T) {
 		for _, d := range testData {
 			docs.AddDocument(d)
 		}
 
-		index, err = NewIndex("Test_walMergeDocs_WriteTo.index_1", "", 2)
+		index, err = NewIndex("Test_walMergeDocs_WriteTo.index_1", "", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -82,7 +84,7 @@ func Test_walMergeDocs_WriteTo(t *testing.T) {
 	})
 
 	t.Run("Cleanup", func(t *testing.T) {
-		err := DeleteIndex("Test_walMergeDocs_WriteTo.index_1")
+		err := DeleteIndex("Test_walMergeDocs_WriteTo.index_1", cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

@@ -47,7 +47,7 @@ func Create(c *gin.Context) {
 	}
 
 	indexName := c.Param("target")
-	err := CreateIndexWorker(&newIndex, indexName)
+	err := CreateIndexWorker(&newIndex, indexName, config.GetConfig(c))
 	if err != nil {
 		zutils.GinRenderJSON(c, http.StatusBadRequest, meta.HTTPResponseError{Error: err.Error()})
 		return
@@ -85,7 +85,7 @@ func CreateES(c *gin.Context) {
 	// default the storage_type to disk, to provide the best possible integration
 	newIndex.StorageType = "disk"
 
-	err := CreateIndexWorker(&newIndex, indexName)
+	err := CreateIndexWorker(&newIndex, indexName, config.GetConfig(c))
 	if err != nil {
 		zutils.GinRenderJSON(c, http.StatusBadRequest, meta.HTTPResponseError{Error: err.Error()})
 		return
@@ -98,7 +98,7 @@ func CreateES(c *gin.Context) {
 	})
 }
 
-func CreateIndexWorker(newIndex *meta.IndexSimple, indexName string) error {
+func CreateIndexWorker(newIndex *meta.IndexSimple, indexName string, cfg *config.Config) error {
 	newIndex.StorageType = "disk"
 	if newIndex.Name == "" && indexName != "" {
 		newIndex.Name = indexName
@@ -120,7 +120,7 @@ func CreateIndexWorker(newIndex *meta.IndexSimple, indexName string) error {
 		return errors.New(err.Error())
 	}
 
-	mappings, err := mappings.Request(analyzers, newIndex.Mappings)
+	mappings, err := mappings.Request(analyzers, newIndex.Mappings, cfg.EnableTextKeywordMapping)
 	if err != nil {
 		return errors.New(err.Error())
 	}
@@ -131,9 +131,9 @@ func CreateIndexWorker(newIndex *meta.IndexSimple, indexName string) error {
 		}
 	}
 	if newIndex.ShardNum == 0 {
-		newIndex.ShardNum = config.Global.Shard.Num
+		newIndex.ShardNum = cfg.Shard.Num
 	}
-	index, err := core.NewIndex(newIndex.Name, newIndex.StorageType, newIndex.ShardNum)
+	index, err := core.NewIndex(newIndex.Name, newIndex.StorageType, newIndex.ShardNum, cfg)
 	if err != nil {
 		return errors.New(err.Error())
 	}

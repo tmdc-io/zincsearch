@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,9 +65,10 @@ func TestNewIndex(t *testing.T) {
 			wantErr: true,
 		},
 	}
+	cfg := config.NewGlobalConfig()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewIndex(tt.args.name, tt.args.storageType, 2)
+			got, err := NewIndex(tt.args.name, tt.args.storageType, 2, cfg)
 			if tt.wantErr {
 				assert.Error(t, err)
 				return
@@ -78,7 +80,7 @@ func TestNewIndex(t *testing.T) {
 			assert.NoError(t, err)
 
 			t.Run("cleanup", func(t *testing.T) {
-				err := DeleteIndex(tt.args.name)
+				err := DeleteIndex(tt.args.name, cfg.DataPath)
 				assert.NoError(t, err)
 			})
 		})
@@ -110,9 +112,9 @@ func TestGetIndex(t *testing.T) {
 			want1: false,
 		},
 	}
-
+	cfg := config.NewGlobalConfig()
 	t.Run("prepare", func(t *testing.T) {
-		index, err := NewIndex("TestGetIndex.index_1", "disk", 2)
+		index, err := NewIndex("TestGetIndex.index_1", "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -133,7 +135,7 @@ func TestGetIndex(t *testing.T) {
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := DeleteIndex("TestGetIndex.index_1")
+		err := DeleteIndex("TestGetIndex.index_1", cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

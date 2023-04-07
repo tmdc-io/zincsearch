@@ -21,11 +21,10 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/metadata"
 )
 
-func DeleteIndex(name string) error {
+func DeleteIndex(name, dataPath string) error {
 	// 1. Check if index exists
 	index, exists := GetIndex(name)
 	if !exists {
@@ -36,7 +35,6 @@ func DeleteIndex(name string) error {
 	ZINC_INDEX_LIST.Delete(name)
 
 	// 3. Physically delete the index
-	dataPath := config.Global.DataPath
 	err := os.RemoveAll(dataPath + "/" + index.GetName())
 	if err != nil {
 		log.Error().Err(err).Msg("failed to delete index")

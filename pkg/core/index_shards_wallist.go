@@ -22,20 +22,25 @@ import (
 	"time"
 
 	"golang.org/x/sync/errgroup"
-
-	"github.com/zinclabs/zincsearch/pkg/config"
 )
 
 // Record opened WAL used to do consume
 var ZINC_INDEX_SHARD_WAL_LIST IndexShardWALList
 
 type IndexShardWALList struct {
-	Shards map[string]*IndexShard
-	lock   sync.RWMutex
+	Shards          map[string]*IndexShard
+	lock            sync.RWMutex
+	goroutineNum    int
+	walSyncInterval time.Duration
 }
 
-func init() {
+func NewIndexShardWalList(
+	goroutineNum int,
+	walSyncInterval time.Duration,
+) {
 	ZINC_INDEX_SHARD_WAL_LIST.Shards = make(map[string]*IndexShard)
+	ZINC_INDEX_SHARD_WAL_LIST.goroutineNum = goroutineNum
+	ZINC_INDEX_SHARD_WAL_LIST.walSyncInterval = walSyncInterval
 	go ZINC_INDEX_SHARD_WAL_LIST.ConsumeWAL()
 }
 
@@ -72,8 +77,8 @@ func (t *IndexShardWALList) ConsumeWAL() {
 
 	indexes := make(map[string]*Index)
 	eg := &errgroup.Group{}
-	eg.SetLimit(config.Global.Shard.GorutineNum)
-	tick := time.NewTicker(config.Global.WalSyncInterval)
+	eg.SetLimit(t.goroutineNum)
+	tick := time.NewTicker(t.walSyncInterval)
 	for range tick.C {
 		shardClosed := make(chan string, t.Len())
 		indexUpdated := make(chan string, t.Len())

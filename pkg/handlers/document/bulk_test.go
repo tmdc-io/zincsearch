@@ -16,6 +16,9 @@
 package document
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
+	"github.com/zinclabs/zincsearch/pkg/core"
+	"github.com/zinclabs/zincsearch/pkg/metadata"
 	"net/http"
 	"testing"
 
@@ -31,6 +34,11 @@ func TestBulk(t *testing.T) {
 		params map[string]string
 		result string
 	}
+	cfg := config.NewEnvFileGlobalConfig([]string{"../../../.env"})
+	metadata.NewStorager(cfg)
+	core.NewIndexList(cfg)
+	core.NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
+
 	tests := []struct {
 		name string
 		args args

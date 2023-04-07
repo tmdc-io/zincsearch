@@ -16,6 +16,7 @@
 package index
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"testing"
 
@@ -170,10 +171,10 @@ func TestAddOrRemoveESAlias(t *testing.T) {
 			wantAliases: []string{"existing_alias_3"},
 		},
 	}
-
+	cfg := config.NewGlobalConfig()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			index, closeFn := newIndex(t, indexName)
+			index, closeFn := newIndex(t, indexName, cfg)
 			defer closeFn()
 
 			if tt.nFn != nil {
@@ -254,9 +255,10 @@ func TestGetESAliases(t *testing.T) {
 		},
 	}
 
+	cfg := config.NewGlobalConfig()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			index, closeFn := newIndex(t, indexName)
+			index, closeFn := newIndex(t, indexName, cfg)
 			defer closeFn()
 
 			if tt.nFn != nil {
@@ -273,8 +275,8 @@ func TestGetESAliases(t *testing.T) {
 	}
 }
 
-func newIndex(t *testing.T, indexName string) (*core.Index, func()) {
-	index, err := core.NewIndex(indexName, "disk", 2)
+func newIndex(t *testing.T, indexName string, cfg *config.Config) (*core.Index, func()) {
+	index, err := core.NewIndex(indexName, "disk", 2, cfg)
 	require.NoError(t, err)
 
 	err = core.StoreIndex(index)
@@ -283,6 +285,6 @@ func newIndex(t *testing.T, indexName string) (*core.Index, func()) {
 	return index, func() {
 		require.NoError(t, metadata.Alias.Set(map[string][]string{}))
 		core.ZINC_INDEX_ALIAS_LIST = *core.NewAliasList()
-		require.NoError(t, core.DeleteIndex(indexName))
+		require.NoError(t, core.DeleteIndex(indexName, cfg.DataPath))
 	}
 }

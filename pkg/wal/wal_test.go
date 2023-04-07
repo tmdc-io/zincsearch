@@ -29,7 +29,7 @@ const name = "walTest"
 
 func TestMain(m *testing.M) {
 	var err error
-	l, err = Open(name)
+	l, err = Open(name, "./data", false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestOpenClose(t *testing.T) {
-	l, err := Open("walTest2")
+	l, err := Open("walTest2", "./data", false)
 	assert.NoError(t, err)
 	err = l.Close()
 	assert.NoError(t, err)

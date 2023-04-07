@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -420,17 +421,17 @@ func TestUseTemplate(t *testing.T) {
 					assert.Equal(t, tt.wantPriority, got.Priority)
 				}
 			}
-
+			cfg := config.NewGlobalConfig()
 			t.Run("new index use template", func(t *testing.T) {
 				indexName := "TestUseTemplate-log-error-2022.02.02"
-				index, err := NewIndex(indexName, "", 1)
+				index, err := NewIndex(indexName, "", 1, cfg)
 				assert.NoError(t, err)
 				assert.NotNil(t, index)
 
 				err = StoreIndex(index)
 				assert.NoError(t, err)
 
-				err = DeleteIndex(indexName)
+				err = DeleteIndex(indexName, cfg.DataPath)
 				assert.NoError(t, err)
 			})
 		})

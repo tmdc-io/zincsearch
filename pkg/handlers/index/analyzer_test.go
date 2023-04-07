@@ -17,6 +17,7 @@ package index
 
 import (
 	"fmt"
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 	"strings"
 	"testing"
@@ -231,9 +232,9 @@ func TestAnalyze(t *testing.T) {
 			wantErr: true,
 		},
 	}
-
+	cfg := config.NewGlobalConfig()
 	t.Run("prepare", func(t *testing.T) {
-		index, err := core.NewIndex(indexName, "disk", 2)
+		index, err := core.NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -270,7 +271,7 @@ func TestAnalyze(t *testing.T) {
 	}
 
 	t.Run("cleanup", func(t *testing.T) {
-		err := core.DeleteIndex(indexName)
+		err := core.DeleteIndex(indexName, cfg.DataPath)
 		assert.NoError(t, err)
 	})
 }

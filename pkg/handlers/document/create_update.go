@@ -16,6 +16,7 @@
 package document
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -55,7 +56,7 @@ func CreateUpdate(c *gin.Context) {
 		docID = id.(string)
 	}
 	if docID == "" {
-		docID = ider.Generate()
+		docID = ider.GetNode(c).Generate()
 	} else {
 		update = true
 	}
@@ -66,8 +67,8 @@ func CreateUpdate(c *gin.Context) {
 		zutils.GinRenderJSON(c, http.StatusInternalServerError, meta.HTTPResponseError{Error: err.Error()})
 		return
 	}
-
-	err = index.CreateDocument(docID, doc, update)
+	cfg := config.GetConfig(c)
+	err = index.CreateDocument(docID, doc, update, cfg.EnableTextKeywordMapping)
 	if err != nil {
 		zutils.GinRenderJSON(c, http.StatusInternalServerError, meta.HTTPResponseError{Error: err.Error()})
 		return

@@ -19,6 +19,9 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/zinclabs/zincsearch/pkg/auth"
+	"github.com/zinclabs/zincsearch/pkg/ider"
+	"github.com/zinclabs/zincsearch/pkg/metadata"
 	"net/http"
 	"os"
 	"os/signal"
@@ -34,7 +37,6 @@ import (
 	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/core"
 	"github.com/zinclabs/zincsearch/pkg/meta"
-	"github.com/zinclabs/zincsearch/pkg/metadata"
 	"github.com/zinclabs/zincsearch/pkg/routes"
 )
 
@@ -60,20 +62,44 @@ func main() {
 	}
 	log.Info().Msgf("Starting Zinc %s", meta.Version)
 
+	cfg := config.NewGlobalConfig()
+
+	//node, nodeErr := ider.NewNode(cfg.NodeID)
+	//if nodeErr != nil {
+	//	panic(nodeErr)
+	//}
+
+	node := ider.LocalNode()
+
 	// Initialize telemetry
-	telemetry()
+	t := telemetry(cfg, node)
 	// Initialize sentry
-	sentries()
+	sentries(cfg)
 	// Coninuous profiling
-	profiling()
+	profiling(cfg, t)
+
+	//init storage
+	metadata.NewStorager(cfg)
+	//init auth
+	auth.FirstStart(node)
+	//init index list
+	core.NewIndexList(cfg)
+	core.NewIndexShardWalList(cfg.Shard.GoroutineNum, cfg.WalSyncInterval)
 
 	// HTTP init
 	app := gin.New()
-	routes.Setup(app)
+	//inject the global config in the gin context for use by request handlers
+	app.Use(config.InjectConfig(cfg))
+	//inject the global telemetry in the gin context for use by request handlers
+	app.Use(core.InjectTelemetry(t))
+	//inject the global node in the gin context for use by request handlers
+	app.Use(ider.InjectNode(node))
+	//setup the routes
+	routes.Setup(app, cfg)
 
 	// Run the server
-	PORT := config.Global.ServerPort
-	ADDRESS := config.Global.ServerAddress
+	PORT := cfg.ServerPort
+	ADDRESS := cfg.ServerAddress
 	server := &http.Server{
 		Addr:    ADDRESS + ":" + PORT,
 		Handler: app,
@@ -88,7 +114,7 @@ func main() {
 				log.Fatal().Err(err).Msg("Server Shutdown")
 			}
 		} else {
-			server.Close()
+			_ = server.Close()
 		}
 
 		log.Info().Msg("Index closing...")
@@ -106,7 +132,7 @@ func main() {
 
 		log.Info().Msg("Listen on " + server.Addr)
 
-		if config.Global.ServerTLSCertificateFile != "" && config.Global.ServerTLSKeyFile != "" {
+		if cfg.ServerTLSCertificateFile != "" && cfg.ServerTLSKeyFile != "" {
 
 			// set minimum TLS version (1.2) and intermediate cipher suites
 			server.TLSConfig = &tls.Config{
@@ -121,8 +147,8 @@ func main() {
 				},
 			}
 
-			certFile := config.Global.ServerTLSCertificateFile
-			keyFile := config.Global.ServerTLSKeyFile
+			certFile := cfg.ServerTLSCertificateFile
+			keyFile := cfg.ServerTLSKeyFile
 
 			return server.ListenAndServeTLS(certFile, keyFile)
 
@@ -145,22 +171,24 @@ func main() {
 	log.Info().Msg("Server shutdown ok")
 }
 
-func telemetry() {
-	core.Telemetry.Instance()
-	core.Telemetry.Event("server_start", nil)
-	core.Telemetry.Cron()
+func telemetry(cfg *config.Config, node *ider.Node) *core.Telemetry {
+	t := core.NewTelemetry(cfg.TelemetryEnable, node)
+	t.Instance()
+	t.Event("server_start", nil)
+	t.Cron()
+	return t
 }
 
-func sentries() {
-	if !config.Global.SentryEnable {
+func sentries(cfg *config.Config) {
+	if !cfg.SentryEnable {
 		return
 	}
-	if config.Global.SentryDSN == "" {
+	if cfg.SentryDSN == "" {
 		return
 	}
 
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn:     config.Global.SentryDSN,
+		Dsn:     cfg.SentryDSN,
 		Release: "zinc@" + meta.Version,
 	})
 	if err != nil {
@@ -168,24 +196,24 @@ func sentries() {
 	}
 }
 
-func profiling() {
-	if !config.Global.ProfilerEnable {
+func profiling(cfg *config.Config, t *core.Telemetry) {
+	if !cfg.ProfilerEnable {
 		return
 	}
-	if config.Global.ProfilerServer == "" {
+	if cfg.ProfilerServer == "" {
 		return
 	}
 
-	ProfileID := config.Global.ProfilerFriendlyProfileID
+	ProfileID := cfg.ProfilerFriendlyProfileID
 	if ProfileID == "" {
-		ProfileID = strings.ToLower(core.Telemetry.GetInstanceID())
+		ProfileID = strings.ToLower(t.GetInstanceID())
 	}
 
 	_, err := pyroscope.Start(pyroscope.Config{
 		ApplicationName: "zincsearch-" + ProfileID,
 
 		// replace this with the address of pyroscope server
-		ServerAddress: config.Global.ProfilerServer,
+		ServerAddress: cfg.ProfilerServer,
 
 		// you can disable logging by setting this to nil
 		// Logger: pyroscope.StandardLogger,
@@ -193,7 +221,7 @@ func profiling() {
 
 		// optionally, if authentication is enabled, specify the API key:
 		// AuthToken: os.Getenv("PYROSCOPE_AUTH_TOKEN"),
-		AuthToken: config.Global.ProfilerAPIKey,
+		AuthToken: cfg.ProfilerAPIKey,
 
 		// by default all profilers are enabled,
 		// but you can select the ones you want to use:

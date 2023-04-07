@@ -16,6 +16,7 @@
 package core
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"testing"
 	"time"
 
@@ -59,8 +60,9 @@ func TestIndex_Shards(t *testing.T) {
 	var index *Index
 	var err error
 	var indexName = "TestIndex_Shards.index_1"
+	cfg := config.NewGlobalConfig()
 	t.Run("perpare", func(t *testing.T) {
-		index, err = NewIndex(indexName, "disk", 2)
+		index, err = NewIndex(indexName, "disk", 2, cfg)
 		assert.NoError(t, err)
 		assert.NotNil(t, index)
 
@@ -70,7 +72,7 @@ func TestIndex_Shards(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := index.CreateDocument(tt.args.docID, tt.args.doc, false)
+			err := index.CreateDocument(tt.args.docID, tt.args.doc, false, cfg.EnableTextKeywordMapping)
 			assert.NoError(t, err)
 
 			// wait for WAL write to index
@@ -80,14 +82,15 @@ func TestIndex_Shards(t *testing.T) {
 				t.Errorf("Index.NewShard() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if err := index.CheckShards(); (err != nil) != tt.wantErr {
+			if err := index.CheckShards(1073741824); (err != nil) != tt.wantErr {
 				t.Errorf("Index.CheckShards() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 
+	c := config.NewGlobalConfig()
 	t.Run("cleanup", func(t *testing.T) {
-		err := DeleteIndex(indexName)
+		err := DeleteIndex(indexName, c.DataPath)
 		assert.NoError(t, err)
 	})
 }

@@ -22,16 +22,32 @@ import (
 )
 
 func TestGenerate(t *testing.T) {
-	got := Generate()
-	assert.NotEmpty(t, got)
+	a := assert.New(t)
+	//l, err := NewNode(1)
+	l := LocalNode()
+	//if !a.Error(err) {
+	//	return
+	//}
+	got := l.Generate()
+	if !a.NotEmpty(got) {
+		return
+	}
 }
 
 func TestNewNode(t *testing.T) {
+	a := assert.New(t)
 	for i := 1023; i < 1026; i++ {
-		node, err := NewNode(i)
-		assert.NoError(t, err)
-		assert.NotNil(t, node)
+		//node, err := NewNode(i)
+		node := LocalNode()
+		//if !a.NoError(err) {
+		//	return
+		//}
+		if !a.NotNil(node) {
+			return
+		}
 		id := node.Generate()
-		assert.NotEmpty(t, id)
+		if !a.NotEmpty(id) {
+			return
+		}
 	}
 }

@@ -16,6 +16,7 @@
 package search
 
 import (
+	"github.com/zinclabs/zincsearch/pkg/config"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -61,8 +62,7 @@ func SearchV1(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, meta.HTTPResponseError{Error: err.Error()})
 		return
 	}
-
-	resp, err := index.Search(newQuery)
+	resp, err := index.Search(newQuery, config.GetConfig(c))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, meta.HTTPResponseError{Error: err.Error()})
 		return
@@ -75,7 +75,7 @@ func SearchV1(c *gin.Context) {
 	eventData["search_index_size_in_mb"] = storageSize / 1024 / 1024
 	eventData["time_taken_to_search_in_ms"] = resp.Took
 	eventData["aggregations_count"] = len(iQuery.Aggregations)
-	core.Telemetry.Event("search", eventData)
+	core.GetTelemetry(c).Event("search", eventData)
 
 	c.JSON(http.StatusOK, resp)
 }

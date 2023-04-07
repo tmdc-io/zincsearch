@@ -23,7 +23,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.etcd.io/bbolt"
 
-	"github.com/zinclabs/zincsearch/pkg/config"
 	"github.com/zinclabs/zincsearch/pkg/errors"
 	"github.com/zinclabs/zincsearch/pkg/metadata/storage"
 )
@@ -32,8 +31,8 @@ type boltStorage struct {
 	db *bbolt.DB
 }
 
-func New(dbpath string) storage.Storager {
-	db, err := openbboltDB(path.Join(config.Global.DataPath, dbpath), false)
+func New(dbpath, dataPath string) storage.Storager {
+	db, err := openbboltDB(path.Join(dataPath, dbpath), false)
 	if err != nil {
 		log.Fatal().Err(err).Msg("open bbolt db for metadata failed")
 	}

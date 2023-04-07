@@ -15,9 +15,12 @@
 
 package routes
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/zinclabs/zincsearch/pkg/config"
+)
 
-func Setup(app *gin.Engine) {
+func Setup(app *gin.Engine, cfg *config.Config) {
 	// Recovery middleware recovers from any panics and writes a 500 if there was one.
 	app.Use(gin.Recovery())
 	// Debug for gin
@@ -25,6 +28,6 @@ func Setup(app *gin.Engine) {
 		AccessLog(app)
 		SetPProf(app)
 	}
-	SetPrometheus(app) // Set up Prometheus.
-	SetRoutes(app)     // Set up all API routes.
+	SetPrometheus(app, cfg.PrometheusEnable) // Set up Prometheus.
+	SetRoutes(app)                           // Set up all API routes.
 }
